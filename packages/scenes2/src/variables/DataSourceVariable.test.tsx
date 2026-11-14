@@ -77,17 +77,28 @@ interface ProbeState {
   error: string | undefined;
 }
 
-let probe: ProbeState;
-
+/**
+ * Renders the variable state as JSON so tests can read it back with `getProbe()`.
+ */
 function Probe({ name }: { name: string }) {
   const variable = useVariable<VariableValue>(name);
-  probe = {
+  const state: ProbeState = {
     value: variable.value,
     options: variable.options,
     loading: variable.loading,
     error: variable.error?.message,
   };
-  return <div data-testid="loading">{String(Boolean(variable.loading))}</div>;
+
+  return (
+    <>
+      <div data-testid="loading">{String(Boolean(variable.loading))}</div>
+      <pre data-testid="probe">{JSON.stringify(state)}</pre>
+    </>
+  );
+}
+
+function getProbe(): ProbeState {
+  return JSON.parse(screen.getByTestId('probe').textContent ?? '{}');
 }
 
 async function renderVariable(
@@ -103,7 +114,7 @@ async function renderVariable(
     expect(screen.getByTestId('loading')).toHaveTextContent('false'),
   );
 
-  return probe;
+  return getProbe();
 }
 
 describe('DataSourceVariable', () => {
@@ -253,28 +264,39 @@ describe('DataSourceVariable', () => {
       expect(state.error).toEqual('boom');
     });
 
-    it('Should not update state when unmounted before the request resolved', async () => {
-      let resolveList: (items: DataSourceInstanceListItem[]) => void = () => {};
-      getDataSourceInstanceListMock.mockReturnValue(
-        new Promise((resolve) => (resolveList = resolve)),
+    it('Should ignore a request that resolves after the plugin id changed', async () => {
+      let resolveStale: (
+        items: DataSourceInstanceListItem[],
+      ) => void = () => {};
+      getDataSourceInstanceListMock.mockReturnValueOnce(
+        new Promise((resolve) => (resolveStale = resolve)),
       );
 
-      const { unmount } = render(
-        <DataSourceVariable name="test" pluginId="prometheus">
-          <Probe name="test" />
-        </DataSourceVariable>,
+      function Wrapper({ pluginId }: { pluginId: string }) {
+        return (
+          <DataSourceVariable name="test" pluginId={pluginId}>
+            <Probe name="test" />
+          </DataSourceVariable>
+        );
+      }
+
+      const { rerender } = render(<Wrapper pluginId="prometheus" />);
+      rerender(<Wrapper pluginId="elastic" />);
+      await waitFor(() =>
+        expect(getProbe().value.value).toEqual('elastic-mocked-uid'),
       );
 
-      const before = probe;
-      unmount();
-
+      // The stale prometheus request resolves last with no data sources
       await act(async () => {
-        resolveList([]);
+        resolveStale([]);
         await Promise.resolve();
       });
 
-      expect(probe).toBe(before);
-      expect(probe.error).toBeUndefined();
+      expect(getProbe().value).toEqual({
+        value: 'elastic-mocked-uid',
+        label: 'elastic-mocked',
+      });
+      expect(getProbe().error).toBeUndefined();
     });
 
     it('Should clear a previous error once data sources are found', async () => {
@@ -287,11 +309,13 @@ describe('DataSourceVariable', () => {
       }
 
       const { rerender } = render(<Wrapper pluginId="non-existent" />);
-      await waitFor(() => expect(probe.error).toEqual('No data sources found'));
+      await waitFor(() =>
+        expect(getProbe().error).toEqual('No data sources found'),
+      );
 
       rerender(<Wrapper pluginId="prometheus" />);
-      await waitFor(() => expect(probe.error).toBeUndefined());
-      expect(probe.value.value).toEqual('prometheus-mocked-uid');
+      await waitFor(() => expect(getProbe().error).toBeUndefined());
+      expect(getProbe().value.value).toEqual('prometheus-mocked-uid');
     });
   });
 
@@ -353,12 +377,12 @@ describe('DataSourceVariable', () => {
       );
 
       await waitFor(() =>
-        expect(probe.value).toEqual({
+        expect(getProbe().value).toEqual({
           value: 'slow-prometheus-mocked-uid',
           label: 'slow-prometheus-mocked',
         }),
       );
-      expect(probe.options).toEqual([
+      expect(getProbe().options).toEqual([
         {
           label: 'slow-prometheus-mocked',
           value: 'slow-prometheus-mocked-uid',
