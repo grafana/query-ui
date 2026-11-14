@@ -11,6 +11,7 @@ interface DemoScenario {
 const scenarios: DemoScenario[] = [
   { route: ROUTES.PanelGridLayoutDemo, label: 'Panel grid layout demo' },
   { route: ROUTES.VariablesDemo, label: 'Variables demo' },
+  { route: ROUTES.DataSourceVariableDemo, label: 'Data source variable demo' },
 ];
 
 export function DemoHome() {

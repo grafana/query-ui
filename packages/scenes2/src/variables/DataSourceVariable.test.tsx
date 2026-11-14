@@ -1,5 +1,4 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
-import { useEffect } from 'react';
 import { PluginType } from '@grafana/data';
 import {
   getDataSourceInstanceList,
@@ -82,14 +81,12 @@ let probe: ProbeState;
 
 function Probe({ name }: { name: string }) {
   const variable = useVariable<VariableValue>(name);
-  useEffect(() => {
-    probe = {
-      value: variable.value,
-      options: variable.options,
-      loading: variable.loading,
-      error: variable.error?.message,
-    };
-  });
+  probe = {
+    value: variable.value,
+    options: variable.options,
+    loading: variable.loading,
+    error: variable.error?.message,
+  };
   return <div data-testid="loading">{String(Boolean(variable.loading))}</div>;
 }
 

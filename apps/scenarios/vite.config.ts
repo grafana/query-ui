@@ -20,6 +20,18 @@ export default defineConfig({
       },
     ],
   },
+  // @grafana/plugin-compat feature-detects newer @grafana/runtime APIs with
+  // static named imports guarded by `typeof x === 'function'`. Grafana loads
+  // runtime as an external, where a missing export is just undefined, but this
+  // app bundles runtime 13.2.0, which doesn't export them yet. Shim the missing
+  // exports to undefined so plugin-compat takes its fallback path. Both the
+  // production build and the dev server's dependency pre-bundling need it.
+  build: {
+    rolldownOptions: { shimMissingExports: true },
+  },
+  optimizeDeps: {
+    rolldownOptions: { shimMissingExports: true },
+  },
   server: {
     port: 5273,
     fs: {

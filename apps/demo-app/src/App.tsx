@@ -6,6 +6,7 @@ import { PluginPropsContext } from './utils/utils.plugin';
 import { DemoHome } from 'components/DemoHome';
 import { PanelGridLayoutDemo } from 'components/PanelGridLayoutDemo';
 import { VariablesDemo } from 'components/VariablesDemo';
+import { DataSourceVariableDemo } from 'components/DataSourceVariableDemo';
 import { ROUTES } from './constants';
 
 const queryClient = new QueryClient();
@@ -19,6 +20,7 @@ function App(props: AppRootProps) {
             <Routes>
               <Route path={ROUTES.PanelGridLayoutDemo} element={<PanelGridLayoutDemo />} />
               <Route path={ROUTES.VariablesDemo} element={<VariablesDemo />} />
+              <Route path={ROUTES.DataSourceVariableDemo} element={<DataSourceVariableDemo />} />
               <Route path="*" element={<DemoHome />} />
             </Routes>
           </TimeRangeContextProvider>

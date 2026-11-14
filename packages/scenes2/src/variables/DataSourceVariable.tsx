@@ -37,6 +37,10 @@ export interface DataSourceVariableProps {
    * For backwards compatibility with old dashboards, will likely be removed.
    */
   defaultOptionEnabled?: boolean;
+  /**
+   * If it should start in a loading state or not
+   */
+  loading?: boolean;
   children: React.ReactNode;
 }
 
@@ -46,13 +50,14 @@ export function DataSourceVariable({
   pluginId,
   regex = '',
   defaultOptionEnabled,
+  loading,
   children,
 }: DataSourceVariableProps) {
   const parentContext = useContext(VariableContext);
   const context = useVariableContextState({
     name,
     value: { value: value ?? '', label: value ?? '' },
-    loading: Boolean(pluginId),
+    loading: loading,
     parent: parentContext,
   });
 

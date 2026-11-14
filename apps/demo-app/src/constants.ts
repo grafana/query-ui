@@ -6,6 +6,7 @@ export enum ROUTES {
   Home = 'home',
   PanelGridLayoutDemo = 'panel-grid-layout-demo',
   VariablesDemo = 'variables-demo',
+  DataSourceVariableDemo = 'data-source-variable-demo',
 }
 
 export const DATASOURCE_REF = {

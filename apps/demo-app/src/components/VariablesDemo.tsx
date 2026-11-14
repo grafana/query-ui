@@ -2,16 +2,15 @@ import {
   DefineVariable,
   useInterpolator,
   useDataQuery,
-  VizConfigBuilders,
   VizPanel,
   VariableValueSelect,
   VariableTestQuery,
 } from '@grafana/scenes2';
-import { VisibilityMode } from '@grafana/schema';
-import { GraphGradientMode, LineInterpolation, Stack } from '@grafana/ui';
+import { Stack } from '@grafana/ui';
 import React from 'react';
 
 import { PageWrapper } from './PageWrapper';
+import { plainTimeSeriesGraph } from './sharedVisualizations';
 
 export function VariablesDemo() {
   return (
@@ -23,13 +22,6 @@ export function VariablesDemo() {
     </PageWrapper>
   );
 }
-
-const plainViz = VizConfigBuilders.timeseries()
-  .setCustomFieldConfig('fillOpacity', 30)
-  .setCustomFieldConfig('gradientMode', GraphGradientMode.Opacity)
-  .setCustomFieldConfig('lineInterpolation', LineInterpolation.Smooth)
-  .setCustomFieldConfig('showPoints', VisibilityMode.Never)
-  .build();
 
 const PrintVariable = React.memo(function PrintVariable() {
   const [alias, loading] = useInterpolator('service=${service} pod=${pod}');
@@ -53,7 +45,7 @@ const PrintVariable = React.memo(function PrintVariable() {
           <VariableValueSelect name="service" />
         </Stack>
         <div style={{ height: 400 }}>
-          <VizPanel title="Test graph" vizConfig={plainViz} data={data.data} />
+          <VizPanel title="Test graph" vizConfig={plainTimeSeriesGraph} data={data.data} />
         </div>
       </Stack>
     </div>
