@@ -1,4 +1,4 @@
-import { FieldType, toDataFrame } from '@grafana/data';
+import { type DataFrame, FieldType, toDataFrame } from '@grafana/data';
 
 import { toMetricFindValues } from './toMetricFindValues';
 
@@ -152,7 +152,7 @@ describe('toMetricFindValues(valueProp,textProp)', () => {
     ].forEach((scenario) => {
       it(scenario.name, () => {
         const { series, expected } = scenario;
-        const panelData: any = { series };
+        const panelData = { series: series as DataFrame[] };
         expect(toMetricFindValues(panelData)).toEqual(expected);
       });
     });
@@ -163,7 +163,7 @@ describe('toMetricFindValues(valueProp,textProp)', () => {
           fields: [{ name: 'time', type: FieldType.time, values: [1, 2, 3] }],
         });
 
-        const panelData: any = { series: [frameWithTimeField] };
+        const panelData = { series: [frameWithTimeField] };
         expect(() => toMetricFindValues(panelData)).toThrow(
           "Couldn't find any field of type string or number in the results",
         );
@@ -443,7 +443,7 @@ describe('toMetricFindValues(valueProp,textProp)', () => {
     ].forEach((scenario) => {
       it(scenario.name, () => {
         const { series, valueProp, textProp, expected } = scenario;
-        const panelData: any = { series };
+        const panelData = { series };
         expect(toMetricFindValues(panelData, valueProp, textProp)).toEqual(
           expected,
         );
@@ -458,7 +458,7 @@ describe('toMetricFindValues(valueProp,textProp)', () => {
           ],
         });
 
-        const panelData: any = { series: [frameWithPropertiesField] };
+        const panelData = { series: [frameWithPropertiesField] };
         expect(() =>
           toMetricFindValues(panelData, undefined, undefined),
         ).toThrow(

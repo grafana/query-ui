@@ -76,7 +76,7 @@ export function isRegexSelector(selector?: string) {
 // so every character that matches something in that list has to be escaped.
 // the list of meta characters is: *+?()|\.[]{}^$
 // we make a javascript regular expression that matches those characters:
-const RE2_METACHARACTERS = /[*+?()|\\.\[\]{}^$]/g;
+const RE2_METACHARACTERS = /[*+?()|\\.[\]{}^$]/g;
 function escapeLokiRegexp(value: string): string {
   return value.replace(RE2_METACHARACTERS, '\\$&');
 }
@@ -87,7 +87,7 @@ export function escapeUrlPipeDelimiters(value: string | undefined): string {
   }
 
   // Replace the pipe due to using it as a filter separator
-  return (value = /\|/g[Symbol.replace](value, '__gfp__'));
+  return /\|/g[Symbol.replace](value, '__gfp__');
 }
 
 export function escapeUrlCommaDelimiters(value: string | undefined): string {
