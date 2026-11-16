@@ -25,6 +25,7 @@ export {
 export { useAdhocFilters } from './hooks/useAdhocFilters';
 export { useDataQuery } from './hooks/useDataQuery';
 export { useTimeRange } from './hooks/useTimeRange';
+export { useVariable } from './hooks/useVariable';
 export {
   PanelGridLayout,
   type PanelGridLayoutProps,
@@ -49,6 +50,11 @@ export {
   type DataSourceVariableProps,
 } from './variables/DataSourceVariable';
 export { DefineVariable } from './variables/DefineVariable';
+export {
+  type VariableContextState,
+  type VariableValue,
+  type VariableValueOption,
+} from './variables/types';
 export { useInterpolator } from './variables/interpolation/useInterpolator';
 export {
   useVariableOptionsQuery,
