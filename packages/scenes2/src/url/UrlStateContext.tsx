@@ -146,6 +146,16 @@ export function UrlStateProvider({
   );
 }
 
+export interface UseUrlStateOptions {
+  /**
+   * Keeps the state to this component, as if there were no
+   * {@link UrlStateProvider} above it: nothing is read from or written to the
+   * URL, and no url key is claimed. Set it for the life of the component;
+   * changing it later changes the hooks the component calls.
+   */
+  skip?: boolean;
+}
+
 /**
  * Claims a url key for every entry in `keys` for as long as the component stays
  * mounted, and hands back what the query string holds for them along with the
@@ -184,8 +194,11 @@ export function UrlStateProvider({
  */
 export function useUrlState<T extends object>(
   keys: readonly (keyof T & string)[],
+  options: UseUrlStateOptions = {},
 ): [UrlValues<T>, (update: T) => void] {
-  const { registry, getParams, subscribe, write } = useUrlStateStore();
+  const { registry, getParams, subscribe, write } = useUrlStateStore(
+    options.skip,
+  );
   const owner = useId();
   const [claimedKeys] = useState(() => [...keys]);
 
@@ -256,10 +269,10 @@ export function useUrlState<T extends object>(
  * creates it once, on its first render. Calling one hook or the other instead
  * would change the hook order of a consumer whose provider arrives later.
  */
-function useUrlStateStore(): UrlStateContextValue {
+function useUrlStateStore(skip?: boolean): UrlStateContextValue {
   const context = useContext(UrlStateContext);
 
-  if (context) {
+  if (context && !skip) {
     return context;
   }
 
