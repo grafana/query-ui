@@ -6,13 +6,16 @@ import { AdhocFiltersProvider } from './AdhocFiltersContext';
 import type { AdHocFilterWithLabels } from './AdhocFiltersContext';
 
 function FiltersProbe() {
-  const { filters, onAddFilter, onUpdateFilter, onRemoveFilter } =
+  const { filters, baseFilters, onAddFilter, onUpdateFilter, onRemoveFilter } =
     useAdhocFilters();
 
   return (
     <div>
       <span data-testid="filters">
         {filters.map((f) => `${f.key}${f.operator}${f.value}`).join(',')}
+      </span>
+      <span data-testid="base-filters">
+        {baseFilters?.map((f) => `${f.key}${f.operator}${f.value}`).join(',')}
       </span>
       <button
         onClick={() =>
@@ -95,6 +98,21 @@ describe('AdhocFiltersProvider', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'remove' }));
 
+    expect(readFilters()).toBe('');
+  });
+});
+
+describe('baseFilters', () => {
+  it('exposes base filters without adding them to the user filters', () => {
+    render(
+      <AdhocFiltersProvider
+        baseFilters={[{ key: 'cluster', operator: '=', value: 'a' }]}
+      >
+        <FiltersProbe />
+      </AdhocFiltersProvider>,
+    );
+
+    expect(screen.getByTestId('base-filters').textContent).toBe('cluster=a');
     expect(readFilters()).toBe('');
   });
 });

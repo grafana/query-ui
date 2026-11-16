@@ -10,6 +10,8 @@ import { getDataSourceSrv } from '@grafana/runtime';
 import { Combobox, type ComboboxOption, useStyles2 } from '@grafana/ui';
 
 import { useAdhocFilters } from '../hooks/useAdhocFilters';
+import { useTimeRange } from '../hooks/useTimeRange';
+import { useInterpolator } from '../variables/interpolation/useInterpolator';
 import { OPERATORS, type AdHocFilterWithLabels } from './AdhocFiltersContext';
 
 type EditorStep = 'key' | 'operator' | 'value';
@@ -32,7 +34,9 @@ export interface AdHocFilterEditorProps {
  * via AdHocFilterPill, for editing an existing filter.
  */
 export function AdHocFilterEditor({ filter, onDone }: AdHocFilterEditorProps) {
-  const { datasource, onAddFilter, onUpdateFilter } = useAdhocFilters();
+  const { datasource, filters, baseFilters, onAddFilter, onUpdateFilter } =
+    useAdhocFilters();
+  const { value: timeRange } = useTimeRange();
   const styles = useStyles2(getStyles);
   const [step, setStep] = useState<EditorStep>(filter ? 'value' : 'key');
   const [draft, setDraft] = useState<DraftFilter>(
@@ -45,25 +49,52 @@ export function AdHocFilterEditor({ filter, onDone }: AdHocFilterEditorProps) {
       : {},
   );
 
+  const [dsInterpolated, dsLoading] = useInterpolator(datasource?.uid ?? '');
+
   const dsQuery = useQuery({
-    queryKey: ['ds', datasource],
-    queryFn: () => getDataSourceSrv().get(datasource ?? undefined),
-    enabled: datasource != null,
+    queryKey: ['ds', dsInterpolated],
+    queryFn: () => getDataSourceSrv().get(dsInterpolated ?? undefined),
+    enabled: dsInterpolated != null && !dsLoading,
     staleTime: Infinity,
   });
 
+  const timeRangeKey = `${timeRange.from.valueOf()}-${timeRange.to.valueOf()}`;
+
+  // The key query lists keys that fit the other filters, so leave out the
+  // filter being edited. The value query does the same for the key being picked.
+  const keyFilters = useMemo(
+    () => getRequestFilters(filters, baseFilters, filter?.key),
+    [filters, baseFilters, filter?.key],
+  );
+  const valueFilters = useMemo(
+    () => getRequestFilters(filters, baseFilters, draft.key),
+    [filters, baseFilters, draft.key],
+  );
+
   const keysQuery = useQuery({
-    queryKey: ['adhoc-tag-keys', datasource],
+    queryKey: ['adhoc-tag-keys', dsInterpolated, keyFilters, timeRangeKey],
     queryFn: async () =>
-      normalizeTagResponse(await dsQuery.data?.getTagKeys?.({ filters: [] })),
+      normalizeTagResponse(
+        await dsQuery.data?.getTagKeys?.({ filters: keyFilters, timeRange }),
+      ),
     enabled: step === 'key' && dsQuery.data != null,
   });
 
   const valuesQuery = useQuery({
-    queryKey: ['adhoc-tag-values', datasource, draft.key],
+    queryKey: [
+      'adhoc-tag-values',
+      dsInterpolated,
+      draft.key,
+      valueFilters,
+      timeRangeKey,
+    ],
     queryFn: async () =>
       normalizeTagResponse(
-        await dsQuery.data?.getTagValues?.({ key: draft.key!, filters: [] }),
+        await dsQuery.data?.getTagValues?.({
+          key: draft.key!,
+          filters: valueFilters,
+          timeRange,
+        }),
       ),
     enabled: step === 'value' && dsQuery.data != null && draft.key != null,
   });
@@ -167,6 +198,18 @@ export function AdHocFilterEditor({ filter, onDone }: AdHocFilterEditorProps) {
       )}
     </div>
   );
+}
+
+/**
+ * The filters sent with a tag keys/values request: the user's filters minus any
+ * on the key being edited, followed by the base filters.
+ */
+function getRequestFilters(
+  filters: AdHocFilterWithLabels[],
+  baseFilters: AdHocFilterWithLabels[] | undefined,
+  excludeKey: string | undefined,
+): AdHocFilterWithLabels[] {
+  return filters.filter((f) => f.key !== excludeKey).concat(baseFilters ?? []);
 }
 
 function toOptions(
