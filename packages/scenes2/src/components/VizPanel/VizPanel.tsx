@@ -1,5 +1,5 @@
 import { css } from '@emotion/css';
-import type { RefCallback } from 'react';
+import type { ReactNode, RefCallback } from 'react';
 import { useMeasure } from 'react-use';
 import { type EventBus, LoadingState, type PanelData } from '@grafana/data';
 import { PanelChrome } from '@grafana/ui';
@@ -11,6 +11,8 @@ export interface VizPanelProps {
   title?: string;
   vizConfig: VizConfig;
   data?: PanelData;
+  /** Rendered in the panel header, for example buttons. */
+  actions?: ReactNode;
 }
 
 export function VizPanel(props: VizPanelProps) {
@@ -27,6 +29,7 @@ export function VizPanel(props: VizPanelProps) {
             width={width}
             height={height}
             loadingState={isLoading ? LoadingState.Loading : undefined}
+            actions={props.actions}
           >
             {(innerWidth, innerHeight) => (
               <>

@@ -25,6 +25,7 @@ export {
 export { useAdhocFilters } from './hooks/useAdhocFilters';
 export { useDataQuery } from './hooks/useDataQuery';
 export { useTimeRange } from './hooks/useTimeRange';
+export { useVariable } from './hooks/useVariable';
 export {
   PanelGridLayout,
   type PanelGridLayoutProps,
@@ -54,4 +55,9 @@ export {
   useVariableOptionsQuery,
   type VariableOptionsQueryProps,
 } from './variables/query/useVariableOptionsQuery';
+export {
+  type VariableContextState,
+  type VariableValue,
+  type VariableValueOption,
+} from './variables/types';
 export { VariableTestQuery } from './variables/VariableTestQuery';

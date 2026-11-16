@@ -32,10 +32,5 @@ const getStyles = (theme: GrafanaTheme2) => ({
     flexWrap: 'wrap',
     alignItems: 'center',
     gap: theme.spacing(1),
-    minHeight: theme.spacing(4),
-    padding: theme.spacing(0.5, 1),
-    border: `1px solid ${theme.components.input.borderColor}`,
-    borderRadius: theme.shape.radius.default,
-    background: theme.components.input.background,
   }),
 });
