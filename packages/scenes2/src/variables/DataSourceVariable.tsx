@@ -43,6 +43,12 @@ export interface DataSourceVariableProps {
    * If it should start in a loading state or not
    */
   loading?: boolean;
+  /**
+   * Keeps the selection out of the URL. By default it is synced to the
+   * `var-<name>` query parameter, and a value there wins over `value` and over
+   * one remembered from an earlier mount.
+   */
+  skipUrlSync?: boolean;
   children: React.ReactNode;
 }
 
@@ -53,6 +59,7 @@ export function DataSourceVariable({
   regex = '',
   defaultOptionEnabled,
   loading,
+  skipUrlSync,
   children,
 }: DataSourceVariableProps) {
   const parentContext = useContext(VariableContext);
@@ -70,6 +77,7 @@ export function DataSourceVariable({
     value: initialValue,
     loading: loading,
     parent: parentContext,
+    skipUrlSync,
   });
 
   // Remember every selection under the variable name, whether it came from the options
