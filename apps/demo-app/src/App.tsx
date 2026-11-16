@@ -8,6 +8,7 @@ import { PanelGridLayoutDemo } from 'components/PanelGridLayoutDemo';
 import { VariablesDemo } from 'components/VariablesDemo';
 import { DataSourceVariableDemo } from 'components/DataSourceVariableDemo';
 import { ROUTES } from './constants';
+import { DrilldownMetrics } from 'drilldown-metrics/DrilldownMetrics';
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ function App(props: AppRootProps) {
               <Route path={ROUTES.PanelGridLayoutDemo} element={<PanelGridLayoutDemo />} />
               <Route path={ROUTES.VariablesDemo} element={<VariablesDemo />} />
               <Route path={ROUTES.DataSourceVariableDemo} element={<DataSourceVariableDemo />} />
+              <Route path={ROUTES.DrilldownMetrics} element={<DrilldownMetrics />} />
               <Route path="*" element={<DemoHome />} />
             </Routes>
           </TimeRangeContextProvider>
