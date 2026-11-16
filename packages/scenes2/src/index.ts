@@ -53,5 +53,5 @@ export { useInterpolator } from './variables/interpolation/useInterpolator';
 export {
   useVariableOptionsQuery,
   type VariableOptionsQueryProps,
-} from './variables/useVariableOptionsQuery';
+} from './variables/query/useVariableOptionsQuery';
 export { VariableTestQuery } from './variables/VariableTestQuery';
