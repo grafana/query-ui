@@ -63,7 +63,14 @@ type VariableQueryEditorType<
   TOptions extends DataSourceJsonData = DataSourceJsonData,
 > =
   | ComponentType<VariableQueryEditorProps>
-  | ComponentType<QueryEditorProps<any, TQuery, TOptions, any>>
+  | ComponentType<
+      QueryEditorProps<
+        DataSourceApi<TQuery, TOptions>,
+        TQuery,
+        TOptions,
+        DataQuery
+      >
+    >
   | null;
 
 export const hasLegacyVariableSupport = <

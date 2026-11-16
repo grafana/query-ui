@@ -50,14 +50,14 @@ export {
   type DataSourceVariableProps,
 } from './variables/DataSourceVariable';
 export { DefineVariable } from './variables/DefineVariable';
-export {
-  type VariableContextState,
-  type VariableValue,
-  type VariableValueOption,
-} from './variables/types';
 export { useInterpolator } from './variables/interpolation/useInterpolator';
 export {
   useVariableOptionsQuery,
   type VariableOptionsQueryProps,
 } from './variables/query/useVariableOptionsQuery';
+export {
+  type VariableContextState,
+  type VariableValue,
+  type VariableValueOption,
+} from './variables/types';
 export { VariableTestQuery } from './variables/VariableTestQuery';
