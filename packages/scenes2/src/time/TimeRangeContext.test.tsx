@@ -27,7 +27,7 @@ vi.mock('@grafana/runtime', () => ({
 
 /** `name` keeps the readouts apart when a test renders nested providers. */
 function ShowTimeRange({ name = 'outer' }: { name?: string }) {
-  const { from, to, value, onChangeTimeRange } = useTimeRange();
+  const { from, to, value, onChangeTimeRange, onRefresh } = useTimeRange();
 
   return (
     <div>
@@ -42,6 +42,7 @@ function ShowTimeRange({ name = 'outer' }: { name?: string }) {
       >
         {`${name} last 1h`}
       </button>
+      <button onClick={onRefresh}>{`${name} refresh`}</button>
     </div>
   );
 }
@@ -143,6 +144,10 @@ function readState(name = 'outer') {
 
 function selectLast1h(name = 'outer') {
   fireEvent.click(screen.getByRole('button', { name: `${name} last 1h` }));
+}
+
+function refresh(name = 'outer') {
+  fireEvent.click(screen.getByRole('button', { name: `${name} refresh` }));
 }
 
 function queryParams() {
@@ -250,6 +255,75 @@ describe('TimeRangeContextProvider', () => {
       renderWithCache(cache, { cacheKey: 'test', initFrom: 'now-12h' });
 
       expect(readState().raw).toBe('now-1h to now');
+    });
+  });
+
+  describe('refresh', () => {
+    it('re-evaluates the range against the current time', () => {
+      renderWithCache(cache);
+      const before = readState();
+
+      vi.advanceTimersByTime(60000);
+      refresh();
+
+      expect(readState().raw).toBe(before.raw);
+      expect(readState().evaluated).not.toBe(before.evaluated);
+    });
+
+    it('re-evaluates a range that came from the cache', () => {
+      renderWithCache(cache, { cacheKey: 'test', staleTime: Infinity });
+      selectLast1h();
+      cleanup();
+
+      vi.advanceTimersByTime(1000);
+      renderWithCache(cache, { cacheKey: 'test', staleTime: Infinity });
+      const before = readState();
+
+      vi.advanceTimersByTime(1000);
+      refresh();
+
+      expect(readState().raw).toBe('now-1h to now');
+      expect(readState().evaluated).not.toBe(before.evaluated);
+    });
+
+    it('re-evaluates a range that came from the URL', () => {
+      window.history.replaceState(null, '', '/?from=now-3h&to=now');
+      renderWithUrl(cache);
+      const before = readState();
+
+      vi.advanceTimersByTime(60000);
+      refresh();
+
+      expect(readState().raw).toBe('now-3h to now');
+      expect(readState().evaluated).not.toBe(before.evaluated);
+    });
+
+    it('re-evaluates on every refresh', () => {
+      renderWithCache(cache);
+      const first = readState();
+
+      vi.advanceTimersByTime(1000);
+      refresh();
+      const second = readState();
+
+      vi.advanceTimersByTime(1000);
+      refresh();
+
+      expect(second.evaluated).not.toBe(first.evaluated);
+      expect(readState().evaluated).not.toBe(second.evaluated);
+    });
+
+    it('remembers the refreshed range across a remount', () => {
+      renderWithCache(cache, { cacheKey: 'test' });
+      vi.advanceTimersByTime(1000);
+      refresh();
+      const refreshed = readState();
+
+      cleanup();
+      vi.advanceTimersByTime(1000);
+      renderWithCache(cache, { cacheKey: 'test' });
+
+      expect(readState()).toEqual(refreshed);
     });
   });
 

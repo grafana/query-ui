@@ -22,6 +22,8 @@ interface CachedTimeRangeState {
   from: string;
   to: string;
   value: TimeRange;
+  /** The refresh the `value` was evaluated at. */
+  refreshCounter: number;
 }
 
 export const TimeRangeContext = createContext<
@@ -99,7 +101,11 @@ function useTimeRangeState({
 }: TimeRangeContextProviderProps): TimeRangeContextState {
   const validTimeZone = getValidTimeZone(timeZone) || getTimeZone();
   const cache = useCache();
-  const [refreshCounter, setRefreshCounter] = useState<number>(0);
+  // Starts from the counter the cached range was evaluated at, so a remount
+  // restores that range instead of mistaking it for one a refresh has outdated.
+  const [refreshCounter, setRefreshCounter] = useState<number>(
+    () => cache.get<CachedTimeRangeState>(cacheKey)?.refreshCounter ?? 0,
+  );
 
   const [urlState, updateUrlState] = useUrlState<TimeRangeUrlState>(urlKeys);
 
@@ -122,8 +128,13 @@ function useTimeRangeState({
     const prevFrom = cached?.from ?? initFrom;
     const prevTo = cached?.to ?? initTo;
 
-    if (cached && shouldUseCachedState(cached, urlState)) {
-      return { onChangeTimeRange, onRefresh, refreshCounter, ...cached };
+    // A refresh outdates the cached value: the range has to be evaluated again.
+    if (
+      cached &&
+      cached.refreshCounter === refreshCounter &&
+      shouldUseCachedState(cached, urlState)
+    ) {
+      return { onChangeTimeRange, onRefresh, ...cached };
     }
 
     const from = validRaw(urlState.from) ?? prevFrom;
@@ -138,7 +149,11 @@ function useTimeRangeState({
       undefined,
     );
 
-    cache.set<CachedTimeRangeState>(cacheKey, { from, to, value }, staleTime);
+    cache.set<CachedTimeRangeState>(
+      cacheKey,
+      { from, to, value, refreshCounter },
+      staleTime,
+    );
 
     return { value, from, to, refreshCounter, onChangeTimeRange, onRefresh };
   }, [
