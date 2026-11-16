@@ -50,4 +50,8 @@ export {
 } from './variables/DataSourceVariable';
 export { DefineVariable } from './variables/DefineVariable';
 export { useInterpolator } from './variables/interpolation/useInterpolator';
+export {
+  useVariableOptionsQuery,
+  type VariableOptionsQueryProps,
+} from './variables/useVariableOptionsQuery';
 export { VariableTestQuery } from './variables/VariableTestQuery';
