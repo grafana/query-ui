@@ -1,10 +1,11 @@
-import React, { useContext, useEffect, useRef } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { stringToJsRegex } from '@grafana/data';
 import {
   getDataSourceInstanceList,
   getDefaultDataSourceInstanceListItem,
 } from '@grafana/plugin-compat/datasources';
 
+import { useCache } from '../caching/CacheContext';
 import { useVariableContextState } from './DefineVariable';
 import { useInterpolator } from './interpolation/useInterpolator';
 import {
@@ -22,6 +23,7 @@ export interface DataSourceVariableProps {
   /**
    * Initial value: a data source uid, or `default` when `defaultOptionEnabled` is set.
    * Kept when it matches one of the loaded options, otherwise the first option is selected.
+   * A value remembered from an earlier mount of a variable with the same `name` wins over this one.
    */
   value?: string;
   /**
@@ -54,12 +56,34 @@ export function DataSourceVariable({
   children,
 }: DataSourceVariableProps) {
   const parentContext = useContext(VariableContext);
+  const cache = useCache();
+
+  // Read once: the state below only takes its initial value from this on mount
+  const [cachedValue] = useState(() => cache.get<VariableValue>(name));
+  const initialValue = cachedValue ?? {
+    value: value ?? '',
+    label: value ?? '',
+  };
+
   const context = useVariableContextState({
     name,
-    value: { value: value ?? '', label: value ?? '' },
+    value: initialValue,
     loading: loading,
     parent: parentContext,
   });
+
+  // Remember every selection under the variable name, whether it came from the options
+  // resolving or from the user, so a remount picks up where this one left off. The closest
+  // cache from `CacheContext` holds it; give a subtree its own `CacheProvider` to scope it.
+  const currentValue = context.value;
+  useEffect(() => {
+    // Nothing selected yet, or no options to select from
+    if (currentValue.value === undefined || currentValue.value === '') {
+      return;
+    }
+
+    cache.set<VariableValue>(name, currentValue);
+  }, [cache, name, currentValue]);
 
   // Interpolated against the parent context, so the regex can reference variables defined above this one
   const [interpolatedRegex, regexLoading] = useInterpolator(regex);

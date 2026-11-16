@@ -5,6 +5,8 @@ import {
   getDefaultDataSourceInstanceListItem,
 } from '@grafana/plugin-compat/datasources';
 
+import { CacheProvider } from '../caching/CacheContext';
+import { MemoryCache } from '../caching/MemoryCache';
 import { useVariable } from '../hooks/useVariable';
 import { DataSourceVariable } from './DataSourceVariable';
 import { DefineVariable } from './DefineVariable';
@@ -105,9 +107,11 @@ async function renderVariable(
   props: Partial<React.ComponentProps<typeof DataSourceVariable>>,
 ) {
   render(
-    <DataSourceVariable name="test" pluginId="" {...props}>
-      <Probe name="test" />
-    </DataSourceVariable>,
+    <CacheProvider>
+      <DataSourceVariable name="test" pluginId="" {...props}>
+        <Probe name="test" />
+      </DataSourceVariable>
+    </CacheProvider>,
   );
 
   await waitFor(() =>
@@ -272,11 +276,15 @@ describe('DataSourceVariable', () => {
         new Promise((resolve) => (resolveStale = resolve)),
       );
 
+      const cache = new MemoryCache();
+
       function Wrapper({ pluginId }: { pluginId: string }) {
         return (
-          <DataSourceVariable name="test" pluginId={pluginId}>
-            <Probe name="test" />
-          </DataSourceVariable>
+          <CacheProvider cache={cache}>
+            <DataSourceVariable name="test" pluginId={pluginId}>
+              <Probe name="test" />
+            </DataSourceVariable>
+          </CacheProvider>
         );
       }
 
@@ -300,11 +308,15 @@ describe('DataSourceVariable', () => {
     });
 
     it('Should clear a previous error once data sources are found', async () => {
+      const cache = new MemoryCache();
+
       function Wrapper({ pluginId }: { pluginId: string }) {
         return (
-          <DataSourceVariable name="test" pluginId={pluginId}>
-            <Probe name="test" />
-          </DataSourceVariable>
+          <CacheProvider cache={cache}>
+            <DataSourceVariable name="test" pluginId={pluginId}>
+              <Probe name="test" />
+            </DataSourceVariable>
+          </CacheProvider>
         );
       }
 
@@ -365,15 +377,20 @@ describe('DataSourceVariable', () => {
 
     it('Should interpolate variables in the regex', async () => {
       render(
-        <DefineVariable name="prefix" value={{ value: 'slow', label: 'slow' }}>
-          <DataSourceVariable
-            name="test"
-            pluginId="prometheus"
-            regex="${prefix}.*"
+        <CacheProvider>
+          <DefineVariable
+            name="prefix"
+            value={{ value: 'slow', label: 'slow' }}
           >
-            <Probe name="test" />
-          </DataSourceVariable>
-        </DefineVariable>,
+            <DataSourceVariable
+              name="test"
+              pluginId="prometheus"
+              regex="${prefix}.*"
+            >
+              <Probe name="test" />
+            </DataSourceVariable>
+          </DefineVariable>
+        </CacheProvider>,
       );
 
       await waitFor(() =>
@@ -414,6 +431,124 @@ describe('DataSourceVariable', () => {
         value: 'elastic-mocked-uid',
         label: 'elastic-mocked',
       });
+    });
+  });
+
+  describe('When remounted', () => {
+    function Selector({
+      name,
+      uid,
+      label,
+    }: {
+      name: string;
+      uid: string;
+      label: string;
+    }) {
+      const variable = useVariable<VariableValue>(name);
+
+      return (
+        <button onClick={() => variable.onChange({ value: uid, label })}>
+          select
+        </button>
+      );
+    }
+
+    function renderIn(
+      cache: MemoryCache,
+      props: Partial<React.ComponentProps<typeof DataSourceVariable>> = {},
+    ) {
+      const name = props.name ?? 'test';
+
+      return render(
+        <CacheProvider cache={cache}>
+          <DataSourceVariable name="test" pluginId="prometheus" {...props}>
+            <Probe name={name} />
+            <Selector
+              name={name}
+              uid="slow-prometheus-mocked-uid"
+              label="slow"
+            />
+          </DataSourceVariable>
+        </CacheProvider>,
+      );
+    }
+
+    async function waitForLoaded() {
+      await waitFor(() =>
+        expect(screen.getByTestId('loading')).toHaveTextContent('false'),
+      );
+    }
+
+    it('Should restore the value the user selected', async () => {
+      const cache = new MemoryCache();
+
+      const first = renderIn(cache);
+      await waitForLoaded();
+      expect(getProbe().value.value).toEqual('prometheus-mocked-uid');
+
+      await act(async () => screen.getByText('select').click());
+      expect(getProbe().value.value).toEqual('slow-prometheus-mocked-uid');
+      first.unmount();
+
+      renderIn(cache);
+      // Restored on the first render, before the options have loaded
+      expect(getProbe().value.value).toEqual('slow-prometheus-mocked-uid');
+      await waitForLoaded();
+      expect(getProbe().value).toEqual({
+        value: 'slow-prometheus-mocked-uid',
+        label: 'slow-prometheus-mocked',
+      });
+    });
+
+    it('Should prefer the remembered value over the value prop', async () => {
+      const cache = new MemoryCache();
+
+      const first = renderIn(cache);
+      await waitForLoaded();
+      await act(async () => screen.getByText('select').click());
+      first.unmount();
+
+      renderIn(cache, { value: 'prometheus-mocked-uid' });
+      await waitForLoaded();
+      expect(getProbe().value.value).toEqual('slow-prometheus-mocked-uid');
+    });
+
+    it('Should fall back to the first option when the remembered value is no longer valid', async () => {
+      const cache = new MemoryCache();
+
+      const first = renderIn(cache);
+      await waitForLoaded();
+      await act(async () => screen.getByText('select').click());
+      first.unmount();
+
+      renderIn(cache, { pluginId: 'elastic' });
+      await waitForLoaded();
+      expect(getProbe().value).toEqual({
+        value: 'elastic-mocked-uid',
+        label: 'elastic-mocked',
+      });
+    });
+
+    it('Should keep separate values per variable name', async () => {
+      const cache = new MemoryCache();
+
+      const first = renderIn(cache, { name: 'a' });
+      await waitForLoaded();
+      await act(async () => screen.getByText('select').click());
+      first.unmount();
+
+      renderIn(cache, { name: 'b' });
+      await waitForLoaded();
+      expect(getProbe().value.value).toEqual('prometheus-mocked-uid');
+    });
+
+    it('Should not remember an empty value', async () => {
+      const cache = new MemoryCache();
+
+      renderIn(cache, { pluginId: 'non-existent-datasource' });
+      await waitForLoaded();
+
+      expect(cache.has('test')).toBe(false);
     });
   });
 });
