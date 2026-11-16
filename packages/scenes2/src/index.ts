@@ -44,6 +44,10 @@ export {
   type UrlValues,
   useUrlState,
 } from './url/UrlStateContext';
+export {
+  DataSourceVariable,
+  type DataSourceVariableProps,
+} from './variables/DataSourceVariable';
 export { DefineVariable } from './variables/DefineVariable';
 export { useInterpolator } from './variables/interpolation/useInterpolator';
 export { VariableTestQuery } from './variables/VariableTestQuery';

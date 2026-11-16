@@ -64,12 +64,13 @@ export function useDataQuery<T extends DataQuery>(
   const timeRangeKey = `${timeRange.from.valueOf()}-${timeRange.to.valueOf()}`;
   const queries = options.queries;
   const maxDataPoints = options.maxDataPoints ?? 500;
+  const queryKey = ['data', queries, timeRangeKey, filters];
 
   const queryOptions: UseQueryOptions<PanelData> = {
     enabled: dsQuery.data != null && options.enabled !== false,
     staleTime: staleTime,
-    queryKey: ['data', queries, timeRangeKey, filters],
-    placeholderData: loadPreviousData(['data', queries, timeRangeKey, filters]),
+    queryKey: queryKey,
+    placeholderData: loadPreviousData(queryKey),
     queryFn: () => {
       const request: DataQueryRequest = {
         requestId: requestId + `-${Date.now()}`,

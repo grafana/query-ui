@@ -42,7 +42,7 @@ interface VariableValueStateInput {
   parent?: VariableContextState<unknown>;
 }
 
-function useVariableContextState(
+export function useVariableContextState(
   input: VariableValueStateInput,
 ): VariableContextState<VariableValue> {
   const [loading, setLoading] = React.useState(input.loading);
