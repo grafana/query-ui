@@ -63,9 +63,15 @@ export function useVizPanel(props: VizPanelProps) {
     return { ...rawData, series: appliedFrames };
   }, [rawData, appliedFrames]);
 
+  // Show the loading state while the plugin is importing or the query is
+  // running. Missing data counts as running, since panelDataApplied falls
+  // back to LoadingState.Loading for it.
+  const isLoading =
+    plugin === null || panelDataApplied.state === LoadingState.Loading;
+
   return {
     plugin,
-    isLoading: plugin === null,
+    isLoading,
     fieldConfig: withDefaults.fieldConfig,
     panelOptions: withDefaults.options,
     panelData: panelDataApplied,
