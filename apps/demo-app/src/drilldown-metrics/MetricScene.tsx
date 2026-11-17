@@ -1,5 +1,5 @@
 import { useInterpolator, VizPanel } from '@grafana/scenes2';
-import { Stack, Tab, TabContent, TabsBar } from '@grafana/ui';
+import { Stack, Tab, TabsBar } from '@grafana/ui';
 import { useState } from 'react';
 
 import { plainTimeSeriesGraph } from '../components/sharedVisualizations';
@@ -21,8 +21,8 @@ const TABS: Array<{ id: TabId; label: string }> = [
 
 /** The view for a single selected metric. */
 export function MetricScene({ metric }: MetricSceneProps) {
-  const [ds] = useInterpolator('${ds}');
-  const data = useMetricData(metric, ds);
+  const [dsUid] = useInterpolator('${ds}');
+  const data = useMetricData(metric, dsUid);
   const [activeTab, setActiveTab] = useState<TabId>('breakdown');
 
   return (
@@ -37,7 +37,7 @@ export function MetricScene({ metric }: MetricSceneProps) {
         ))}
       </TabsBar>
 
-      {activeTab === 'breakdown' ? <BreakdownTab metric={metric} dsUid={ds} /> : <div>Not implemented yet.</div>}
+      {activeTab === 'breakdown' ? <BreakdownTab metric={metric} dsUid={dsUid} /> : <div>Not implemented yet.</div>}
     </Stack>
   );
 }

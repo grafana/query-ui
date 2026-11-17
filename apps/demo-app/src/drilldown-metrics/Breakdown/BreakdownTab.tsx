@@ -1,11 +1,10 @@
 import { VariableSort } from '@grafana/data';
-import { GridPanelLayout, useInterpolator, useVariableOptionsQuery, VizPanel } from '@grafana/scenes2';
+import { GridPanelLayout, useVariableOptionsQuery, VizPanel } from '@grafana/scenes2';
 import { Button, Combobox, Field, RadioButtonGroup, Stack } from '@grafana/ui';
 import React, { useMemo, useState } from 'react';
 
 import { plainTimeSeriesGraph } from '../../components/sharedVisualizations';
 import { GRID_TEMPLATE_COLUMNS, layoutOptions, type LayoutMode } from '../shared/panelLayout';
-import { VAR_METRIC_EXPR } from '../shared/shared';
 import { useMetricData } from '../useMetricData';
 
 /** Labels that describe the metric itself rather than a dimension worth breaking down by. */
@@ -18,12 +17,12 @@ interface BreakdownTabProps {
 
 /** Shows the metric grouped by each of its labels, one panel per label. */
 export function BreakdownTab({ metric, dsUid }: BreakdownTabProps) {
-  const [query, queryLoading] = useInterpolator(`label_names(${VAR_METRIC_EXPR})`);
+  const query = `label_names(${metric})`;
   const [selectedLabel, setSelectedLabel] = useState<string>();
   const [layout, setLayout] = useState<LayoutMode>('grid');
 
   const labelNames = useVariableOptionsQuery({
-    enabled: !queryLoading,
+    enabled: true,
     datasource: { uid: dsUid },
     query,
     sort: VariableSort.alphabeticalAsc,
