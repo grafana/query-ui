@@ -6,7 +6,7 @@ describe('serializeFilters', () => {
   it('writes a filter as key, operator and value', () => {
     expect(
       serializeFilters([{ key: 'env', operator: '=', value: 'prod' }]),
-    ).toBe('env|=|prod');
+    ).toEqual(['env|=|prod']);
   });
 
   it('writes labels after a comma, and leaves out one that matches', () => {
@@ -20,7 +20,7 @@ describe('serializeFilters', () => {
           valueLabels: ['prod'],
         },
       ]),
-    ).toBe('env,Environment|=|prod');
+    ).toEqual(['env,Environment|=|prod']);
 
     expect(
       serializeFilters([
@@ -31,7 +31,7 @@ describe('serializeFilters', () => {
           valueLabels: ['Production'],
         },
       ]),
-    ).toBe('env|=|prod,Production');
+    ).toEqual(['env|=|prod,Production']);
   });
 
   it('writes every value of a multi-value operator', () => {
@@ -45,16 +45,16 @@ describe('serializeFilters', () => {
           valueLabels: ['A', 'b'],
         },
       ]),
-    ).toBe('env|=__gfp__|a,A|b');
+    ).toEqual(['env|=__gfp__|a,A|b']);
   });
 
-  it('joins filters with a semicolon', () => {
+  it('writes one value for each filter', () => {
     expect(
       serializeFilters([
         { key: 'env', operator: '=', value: 'prod' },
         { key: 'region', operator: '!=', value: 'eu' },
       ]),
-    ).toBe('env|=|prod;region|!=|eu');
+    ).toEqual(['env|=|prod', 'region|!=|eu']);
   });
 
   it('leaves out filters that are not complete', () => {
@@ -65,7 +65,7 @@ describe('serializeFilters', () => {
         { key: 'env', operator: '=', value: '' },
         { key: 'env', operator: '=|', value: '', values: [] },
       ]),
-    ).toBe('');
+    ).toEqual([]);
   });
 });
 
@@ -76,8 +76,8 @@ describe('deserializeFilters', () => {
         key: 'a|b',
         keyLabel: 'a, b',
         operator: '=',
-        value: 'x;y#z',
-        valueLabels: ['x;y#z'],
+        value: 'x#y',
+        valueLabels: ['x#y'],
       },
       {
         key: 'env',
@@ -93,7 +93,7 @@ describe('deserializeFilters', () => {
   });
 
   it('reads a filter written by Grafana Scenes', () => {
-    expect(deserializeFilters('env|=|prod,Production')).toEqual([
+    expect(deserializeFilters(['env|=|prod,Production'])).toEqual([
       {
         key: 'env',
         keyLabel: 'env',
@@ -105,7 +105,7 @@ describe('deserializeFilters', () => {
   });
 
   it('drops entries without a key or operator', () => {
-    expect(deserializeFilters('|=|a;env;env|=|b')).toEqual([
+    expect(deserializeFilters(['|=|a', 'env', '', 'env|=|b'])).toEqual([
       {
         key: 'env',
         keyLabel: 'env',
@@ -116,7 +116,7 @@ describe('deserializeFilters', () => {
     ]);
   });
 
-  it('reads an empty value as no filters', () => {
-    expect(deserializeFilters('')).toEqual([]);
+  it('reads an empty entry as no filters', () => {
+    expect(deserializeFilters([''])).toEqual([]);
   });
 });

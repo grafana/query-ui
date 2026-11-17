@@ -332,3 +332,97 @@ describe('useUrlState', () => {
     });
   });
 });
+
+describe('useUrlState with multiple values', () => {
+  interface Tags {
+    tag?: string[];
+    page?: string;
+  }
+
+  function renderTags(entry = '/') {
+    const { result } = renderHook(
+      () => ({
+        sync: useUrlState<Tags>(['tag', 'page'], {
+          multiValueKeys: ['tag'],
+        }),
+        location: useLocation(),
+      }),
+      {
+        wrapper: ({ children }: { children: ReactNode }) => (
+          <MemoryRouter initialEntries={[entry]}>
+            <UrlStateProvider>{children}</UrlStateProvider>
+          </MemoryRouter>
+        ),
+      },
+    );
+
+    return {
+      state: () => result.current.sync[0],
+      update: (values: Tags) =>
+        act(() => {
+          result.current.sync[1](values);
+        }),
+      search: () => result.current.location.search,
+    };
+  }
+
+  it('reads every parameter of a multi-value key as a list', () => {
+    const tags = renderTags('/?tag=a&tag=b&page=2');
+
+    expect(tags.state()).toEqual({ tag: ['a', 'b'], page: '2' });
+  });
+
+  it('reads a single parameter of a multi-value key as a list of one', () => {
+    const tags = renderTags('/?tag=a');
+
+    expect(tags.state()).toEqual({ tag: ['a'] });
+  });
+
+  it('writes a list as one parameter for each value', () => {
+    const tags = renderTags('/?page=2');
+
+    tags.update({ tag: ['a', 'b'] });
+
+    expect(tags.state()).toEqual({ tag: ['a', 'b'], page: '2' });
+    expect(tags.search()).toBe('?page=2&tag=a&tag=b');
+  });
+
+  it('replaces the parameters a list had, and removes them for an empty one', () => {
+    const tags = renderTags('/?tag=a&tag=b');
+
+    tags.update({ tag: ['c'] });
+
+    expect(tags.search()).toBe('?tag=c');
+
+    tags.update({ tag: [] });
+
+    expect(tags.state()).toEqual({});
+    expect(tags.search()).toBe('');
+  });
+
+  it('keeps an empty value as a list of one empty string', () => {
+    const tags = renderTags();
+
+    tags.update({ tag: [''] });
+
+    expect(tags.state()).toEqual({ tag: [''] });
+    expect(tags.search()).toBe('?tag=');
+  });
+
+  it('hands back the same list while the parameters stay put', () => {
+    const tags = renderTags('/?tag=a&tag=b');
+    const before = tags.state();
+
+    tags.update({ page: '2' });
+
+    expect(tags.state().tag).toBe(before.tag);
+  });
+
+  it('leaves the history alone for a write of the same list', () => {
+    const tags = renderTags('/?tag=a&tag=b');
+
+    tags.update({ tag: ['a', 'b'] });
+
+    expect(tags.search()).toBe('?tag=a&tag=b');
+  });
+});

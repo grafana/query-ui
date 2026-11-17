@@ -164,13 +164,13 @@ describe('url sync', () => {
   }
 
   it('mounts on the filters in the URL', () => {
-    renderSynced('/?filters=env%7C%3D%7Cprod');
+    renderSynced('/?var-filters=env%7C%3D%7Cprod');
 
     expect(readFilters()).toBe('env=prod');
   });
 
   it('prefers the filters in the URL over the initial ones', () => {
-    renderSynced('/?filters=env%7C%3D%7Cprod', [
+    renderSynced('/?var-filters=env%7C%3D%7Cprod', [
       { key: 'region', operator: '=', value: 'eu' },
     ]);
 
@@ -189,11 +189,11 @@ describe('url sync', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'add' }));
 
-    expect(readSearch()).toBe('?filters=service|=|checkout');
+    expect(readSearch()).toBe('?var-filters=service|=|checkout');
 
     fireEvent.click(screen.getByRole('button', { name: 'update' }));
 
-    expect(readSearch()).toBe('?filters=service|=|cart');
+    expect(readSearch()).toBe('?var-filters=service|=|cart');
 
     fireEvent.click(screen.getByRole('button', { name: 'remove' }));
 
@@ -206,11 +206,13 @@ describe('url sync', () => {
     fireEvent.click(screen.getByRole('button', { name: 'remove' }));
 
     expect(readFilters()).toBe('');
-    expect(readSearch()).toBe('?filters=');
+    expect(readSearch()).toBe('?var-filters=');
   });
 
   it('mounts on no filters when the parameter is empty', () => {
-    renderSynced('/?filters=', [{ key: 'region', operator: '=', value: 'eu' }]);
+    renderSynced('/?var-filters=', [
+      { key: 'region', operator: '=', value: 'eu' },
+    ]);
 
     expect(readFilters()).toBe('');
   });
@@ -237,7 +239,58 @@ describe('url sync', () => {
     });
 
     expect(readFilters()).toBe('service=checkout,service=checkout');
-    expect(readSearch()).toBe('?filters=service|=|checkout;service|=|checkout');
+    expect(readSearch()).toBe(
+      '?var-filters=service|=|checkout&var-filters=service|=|checkout',
+    );
+  });
+
+  it('mounts on several filters, one parameter each', () => {
+    renderSynced('/?var-filters=env|=|prod&var-filters=region|!=|eu');
+
+    expect(readFilters()).toBe('env=prod,region!=eu');
+  });
+
+  it('syncs to the key it is given', () => {
+    render(
+      <MemoryRouter initialEntries={['/?var-filters=env|=|prod']}>
+        <UrlStateProvider>
+          <AdhocFiltersProvider urlKey="f">
+            <FiltersProbe />
+          </AdhocFiltersProvider>
+          <LocationProbe />
+        </UrlStateProvider>
+      </MemoryRouter>,
+    );
+
+    // The default key is no business of a provider that asked for another one
+    expect(readFilters()).toBe('');
+
+    fireEvent.click(screen.getByRole('button', { name: 'add' }));
+
+    expect(readSearch()).toBe('?var-filters=env|=|prod&f=service|=|checkout');
+  });
+
+  it('gives a nested provider a numbered key', () => {
+    render(
+      <MemoryRouter initialEntries={['/?var-filters2=env|=|prod']}>
+        <UrlStateProvider>
+          <AdhocFiltersProvider>
+            <AdhocFiltersProvider>
+              <FiltersProbe />
+            </AdhocFiltersProvider>
+          </AdhocFiltersProvider>
+          <LocationProbe />
+        </UrlStateProvider>
+      </MemoryRouter>,
+    );
+
+    expect(readFilters()).toBe('env=prod');
+
+    fireEvent.click(screen.getByRole('button', { name: 'add' }));
+
+    expect(readSearch()).toBe(
+      '?var-filters2=env|=|prod&var-filters2=service|=|checkout',
+    );
   });
 
   it('keeps the filters to itself without a UrlStateProvider', () => {

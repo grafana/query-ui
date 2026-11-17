@@ -201,3 +201,135 @@ test.describe('adhoc filters combobox', () => {
     await expect(page.getByRole('listbox')).toBeHidden();
   });
 });
+
+/** The filters the URL carries, one entry for each `var-filters` parameter. */
+function urlFilters(page: Page) {
+  return new URL(page.url()).searchParams.getAll('var-filters');
+}
+
+async function typeFilter(page: Page, expression: string) {
+  await addInput(page).click();
+  await page.keyboard.type(expression);
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Escape');
+}
+
+test.describe('adhoc filters url state', () => {
+  test('leaves the URL alone until a filter is added', async ({ page }) => {
+    await page.goto('/adhoc-filters-demo');
+
+    await expect(addInput(page)).toBeVisible();
+    expect(urlFilters(page)).toEqual([]);
+  });
+
+  test('writes each filter as a var-filters parameter of its own', async ({
+    page,
+  }) => {
+    await page.goto('/adhoc-filters-demo');
+
+    await typeFilter(page, 'env = prod');
+    await expect.poll(() => urlFilters(page)).toEqual(['env|=|prod']);
+
+    await typeFilter(page, 'region != eu');
+    await expect
+      .poll(() => urlFilters(page))
+      .toEqual(['env|=|prod', 'region|!=|eu']);
+  });
+
+  test('escapes the pipe of a "one of" operator', async ({ page }) => {
+    await page.goto('/adhoc-filters-demo');
+
+    await typeFilter(page, 'service =| checkout, auth');
+
+    await expect
+      .poll(() => urlFilters(page))
+      .toEqual(['service|=__gfp__|checkout|auth']);
+  });
+
+  test('restores filters from the URL on load', async ({ page }) => {
+    await page.goto(
+      '/adhoc-filters-demo?var-filters=env|=|prod&var-filters=region|!=|eu',
+    );
+
+    await expect(pill(page, 'env')).toHaveText('env = prod');
+    await expect(pill(page, 'region')).toHaveText('region != eu');
+  });
+
+  test('restores a "one of" filter from the URL on load', async ({ page }) => {
+    await page.goto(
+      '/adhoc-filters-demo?var-filters=service|=__gfp__|checkout|auth',
+    );
+
+    await expect(pill(page, 'service')).toHaveText('service =| checkout, auth');
+  });
+
+  test('keeps the filters through a reload', async ({ page }) => {
+    await page.goto('/adhoc-filters-demo');
+    await typeFilter(page, 'env = prod');
+    await expect.poll(() => urlFilters(page)).toEqual(['env|=|prod']);
+
+    await page.reload();
+
+    await expect(pill(page, 'env')).toHaveText('env = prod');
+  });
+
+  test('removes the parameters when the filters are cleared', async ({
+    page,
+  }) => {
+    await page.goto('/adhoc-filters-demo');
+    await typeFilter(page, 'env = prod');
+    await typeFilter(page, 'region = eu');
+    await expect.poll(() => urlFilters(page)).toHaveLength(2);
+
+    await page
+      .getByRole('button', { name: 'Remove filter with key env' })
+      .click();
+    await expect.poll(() => urlFilters(page)).toEqual(['region|=|eu']);
+
+    await page.getByRole('button', { name: 'Clear all' }).click();
+    await expect.poll(() => urlFilters(page)).toEqual([]);
+    await expect(pill(page, 'region')).toBeHidden();
+  });
+
+  test('writes an edit to the URL', async ({ page }) => {
+    await page.goto('/adhoc-filters-demo');
+    await typeFilter(page, 'env = prod');
+
+    await pill(page, 'env').click();
+    await page.keyboard.type('dev');
+    await page.keyboard.press('Enter');
+
+    await expect(pill(page, 'env')).toHaveText('env = dev');
+    await expect.poll(() => urlFilters(page)).toEqual(['env|=|dev']);
+  });
+
+  test('follows the browser history', async ({ page }) => {
+    await page.goto('/adhoc-filters-demo');
+    await typeFilter(page, 'env = prod');
+    await expect.poll(() => urlFilters(page)).toHaveLength(1);
+    await typeFilter(page, 'region = eu');
+    await expect.poll(() => urlFilters(page)).toHaveLength(2);
+
+    await page.goBack();
+
+    await expect(pill(page, 'region')).toBeHidden();
+    await expect(pill(page, 'env')).toBeVisible();
+
+    await page.goBack();
+
+    await expect(pill(page, 'env')).toBeHidden();
+
+    await page.goForward();
+
+    await expect(pill(page, 'env')).toHaveText('env = prod');
+  });
+
+  test('lives beside the time range in the URL', async ({ page }) => {
+    await page.goto('/adhoc-filters-demo?from=now-1h&to=now');
+
+    await typeFilter(page, 'env = prod');
+
+    await expect(page).toHaveURL(/[?&]from=now-1h&to=now(&|$)/);
+    await expect.poll(() => urlFilters(page)).toEqual(['env|=|prod']);
+  });
+});

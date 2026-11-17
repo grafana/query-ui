@@ -2,7 +2,7 @@ import type { AdHocFilterWithLabels } from './AdhocFiltersContext';
 import { isMultiValueOperator } from './AdhocFiltersContext';
 
 /**
- * How filters are written to a single url value.
+ * How filters are written to the url, one value per filter.
  *
  * Each filter follows the format `AdHocFiltersVariable` uses in Grafana Scenes:
  * parts separated by `|`, and a label after a comma, as in
@@ -10,13 +10,9 @@ import { isMultiValueOperator } from './AdhocFiltersContext';
  * one after another: `key|=__gfp__|a,A label|b,B label`. Every part is
  * escaped, so the `|` in the operator `=|` never reads as a separator.
  *
- * Where Scenes repeats a url key once per filter, the query string here holds
- * one value per key, so the filters are joined with `;`.
- *
  * Origin filters, which Scenes writes after a `#`, are not part of the context.
  * The `#` is still escaped so that the two formats stay compatible.
  */
-const filterSeparator = ';';
 const partSeparator = '|';
 const labelSeparator = ',';
 
@@ -25,7 +21,6 @@ const escapes: ReadonlyArray<readonly [string, string]> = [
   [partSeparator, '__gfp__'],
   [labelSeparator, '__gfc__'],
   ['#', '__gfh__'],
-  [filterSeparator, '__gfs__'],
 ];
 
 function escapeDelimiters(text: string): string {
@@ -78,11 +73,11 @@ function serializeFilter(filter: AdHocFilterWithLabels): string {
 }
 
 /**
- * The filters as one url value. Filters that are not complete are left out, and
- * so is everything the url cannot carry, like `meta`.
+ * The filters as url values, one for each. Filters that are not complete are
+ * left out, and so is everything the url cannot carry, like `meta`.
  */
-export function serializeFilters(filters: AdHocFilterWithLabels[]): string {
-  return filters.filter(isComplete).map(serializeFilter).join(filterSeparator);
+export function serializeFilters(filters: AdHocFilterWithLabels[]): string[] {
+  return filters.filter(isComplete).map(serializeFilter);
 }
 
 /** Splits `text` into the text and the label that follows its comma. */
@@ -124,10 +119,11 @@ function deserializeFilter(serialized: string): AdHocFilterWithLabels | null {
   return filter;
 }
 
-/** The filters in a url value, leaving out any entry that does not parse. */
-export function deserializeFilters(value: string): AdHocFilterWithLabels[] {
-  return value
-    .split(filterSeparator)
+/** The filters in the url values, leaving out any entry that does not parse. */
+export function deserializeFilters(
+  values: readonly string[],
+): AdHocFilterWithLabels[] {
+  return values
     .map(deserializeFilter)
     .filter((filter): filter is AdHocFilterWithLabels => filter !== null);
 }

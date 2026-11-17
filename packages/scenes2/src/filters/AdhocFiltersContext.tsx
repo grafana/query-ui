@@ -75,42 +75,60 @@ export interface AdhocFiltersProviderProps {
   datasource?: DataSourceRef | null;
   initialFilters?: AdHocFilterWithLabels[];
   baseFilters?: AdHocFilterWithLabels[];
+  /**
+   * The query-string key the filters sync to, before the registry resolves
+   * conflicts. Read once, on mount. Defaults to `var-filters`.
+   */
+  urlKey?: string;
   children: React.ReactNode;
 }
 
-/** The filters as the query string carries them. */
-interface AdhocFiltersUrlState {
-  filters?: string;
-}
+/** The query-string key the filters sync to when none is given. */
+const defaultUrlKey = 'var-filters';
 
 /**
- * The query-string key the filters sync to, before the registry resolves
- * conflicts. A provider nested inside another one syncs to `filters2`.
+ * Whether `a` and `b` are the same url value: both missing, or both lists with
+ * the same entries.
  */
-const urlKeys = ['filters'] as const;
+function sameUrlValue(
+  a: readonly string[] | undefined,
+  b: readonly string[] | undefined,
+): boolean {
+  if (a === undefined || b === undefined) {
+    return a === b;
+  }
+
+  return a.length === b.length && a.every((item, index) => item === b[index]);
+}
 
 /**
  * Holds the filters for the subtree below it.
  *
- * With a `UrlStateProvider` mounted above, the filters sync to the `filters`
+ * With a `UrlStateProvider` mounted above, the filters sync to the `urlKey`
  * query parameter: filters in the URL are what the provider mounts on (they
  * replace `initialFilters`), changing the filters adds a history entry, and
- * going back to an earlier entry restores its filters. Nested providers sync to
- * numbered keys, like `filters2`, so an inner set never overwrites the outer
- * one.
+ * going back to an earlier entry restores its filters. A nested provider that
+ * asks for the same key gets a numbered one, like `var-filters2`, so an inner
+ * set never overwrites the outer one.
  *
- * The parameter holds each filter as `key|operator|value`, joined with `;`. A
- * label follows its key or value after a comma. Filters that are not complete,
- * and the `meta` of a filter, stay out of the URL.
+ * Each filter is a parameter of its own, like Grafana Scenes writes them:
+ * `?var-filters=env|=|prod&var-filters=region|!=|eu`. A label follows its key
+ * or value after a comma. Filters that are not complete, and the `meta` of a
+ * filter, stay out of the URL.
  */
 export function AdhocFiltersProvider({
   datasource,
   initialFilters,
   baseFilters,
+  urlKey = defaultUrlKey,
   children,
 }: AdhocFiltersProviderProps) {
-  const [urlState, updateUrlState] = useUrlState<AdhocFiltersUrlState>(urlKeys);
-  const urlValue = urlState.filters;
+  // Read once, like the keys `useUrlState` claims.
+  const [claimedUrlKey] = useState(urlKey);
+  const [urlState, updateUrlState] = useUrlState<
+    Record<string, string[] | undefined>
+  >([claimedUrlKey], { multiValueKeys: [claimedUrlKey] });
+  const urlValue = urlState[claimedUrlKey];
 
   // The filters the provider mounted with, which the URL falls back to when it
   // holds none. Read once, like the other initial values.
@@ -131,15 +149,17 @@ export function AdhocFiltersProvider({
     latest.current = filters;
   }, [filters]);
 
-  // The url value for `next`. An empty list is written as an empty value when
+  // The url value for `next`. An empty list is written as one empty value when
   // the defaults have filters, so that clearing them survives a reload.
   const toUrlValue = useCallback(
-    (next: AdHocFilterWithLabels[]): string | undefined => {
+    (next: AdHocFilterWithLabels[]): string[] | undefined => {
       const serialized = serializeFilters(next);
 
-      return serialized === '' && defaultFilters.length === 0
-        ? undefined
-        : serialized;
+      if (serialized.length > 0) {
+        return serialized;
+      }
+
+      return defaultFilters.length === 0 ? undefined : [''];
     },
     [defaultFilters],
   );
@@ -148,10 +168,10 @@ export function AdhocFiltersProvider({
   // set while rendering, so that the new filters never show up a render late.
   const [syncedUrlValue, setSyncedUrlValue] = useState(urlValue);
 
-  if (urlValue !== syncedUrlValue) {
+  if (!sameUrlValue(urlValue, syncedUrlValue)) {
     setSyncedUrlValue(urlValue);
 
-    if (urlValue !== toUrlValue(filters)) {
+    if (!sameUrlValue(urlValue, toUrlValue(filters))) {
       // A parameter that is gone puts the filters back to where they started
       setFilters(
         urlValue === undefined ? defaultFilters : deserializeFilters(urlValue),
@@ -163,9 +183,9 @@ export function AdhocFiltersProvider({
     (next: AdHocFilterWithLabels[]) => {
       latest.current = next;
       setFilters(next);
-      updateUrlState({ filters: toUrlValue(next) });
+      updateUrlState({ [claimedUrlKey]: toUrlValue(next) });
     },
-    [toUrlValue, updateUrlState],
+    [claimedUrlKey, toUrlValue, updateUrlState],
   );
 
   const onAddFilter = useCallback(
