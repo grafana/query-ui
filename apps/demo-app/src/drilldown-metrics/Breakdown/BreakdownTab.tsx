@@ -1,6 +1,6 @@
-import { VariableSort } from '@grafana/data';
+import { type DataFrame, VariableSort } from '@grafana/data';
 import { GridPanelLayout, useVariableOptionsQuery, VizPanel } from '@grafana/scenes2';
-import { Button, Combobox, Field, RadioButtonGroup, Stack } from '@grafana/ui';
+import { Button, Combobox, Field, LoadingPlaceholder, RadioButtonGroup, Stack } from '@grafana/ui';
 import React, { useMemo, useState } from 'react';
 
 import { plainTimeSeriesGraph } from '../../components/sharedVisualizations';
@@ -9,6 +9,9 @@ import { useMetricData } from '../useMetricData';
 
 /** Labels that describe the metric itself rather than a dimension worth breaking down by. */
 const EXCLUDED_LABELS = new Set(['__name__', 'le']);
+
+/** Caps the panels for a label with many values, so they don't all render at once. */
+const MAX_PANELS = 50;
 
 interface BreakdownTabProps {
   metric: string;
@@ -52,18 +55,14 @@ export function BreakdownTab({ metric, dsUid }: BreakdownTabProps) {
             onChange={(option) => setSelectedLabel(option?.value)}
           />
         </Field>
-        {!activeLabel && (
-          <Field label="View" noMargin>
-            <RadioButtonGroup options={layoutOptions} value={layout} onChange={setLayout} />
-          </Field>
-        )}
+        <Field label="View" noMargin>
+          <RadioButtonGroup options={layoutOptions} value={layout} onChange={setLayout} />
+        </Field>
       </Stack>
       {labelNames.isError && <pre>{labelNames.error.message}</pre>}
       {labelNames.data && labels.length === 0 && <div>This metric has no labels to break down by.</div>}
       {activeLabel ? (
-        <div style={{ height: 400 }}>
-          <BreakdownPanel metric={metric} dsUid={dsUid} label={activeLabel} />
-        </div>
+        <LabelValuePanels metric={metric} dsUid={dsUid} label={activeLabel} layout={layout} />
       ) : (
         labels.length > 0 && (
           <GridPanelLayout isLazy templateColumns={GRID_TEMPLATE_COLUMNS[layout]}>
@@ -75,6 +74,62 @@ export function BreakdownTab({ metric, dsUid }: BreakdownTabProps) {
       )}
     </Stack>
   );
+}
+
+interface LabelValuePanelsProps {
+  metric: string;
+  dsUid: string;
+  label: string;
+  layout: LayoutMode;
+}
+
+/**
+ * Shows one panel for each value of the label. A single query returns every value
+ * as its own data frame, and each panel gets one of those frames.
+ */
+function LabelValuePanels({ metric, dsUid, label, layout }: LabelValuePanelsProps) {
+  const data = useMetricData(metric, dsUid, { groupBy: label });
+  const panelData = data.data;
+
+  const panels = useMemo(() => {
+    if (!panelData) {
+      return [];
+    }
+
+    return panelData.series.map((frame) => ({
+      title: getLabelValue(frame, label),
+      data: { ...panelData, series: [frame] },
+    }));
+  }, [panelData, label]);
+
+  if (data.isError) {
+    return <pre>{data.error.message}</pre>;
+  }
+
+  if (!panelData) {
+    return <LoadingPlaceholder text="Loading..." />;
+  }
+
+  return (
+    <Stack direction="column" gap={2}>
+      <span>
+        {panels.length > MAX_PANELS
+          ? `Showing ${MAX_PANELS} of ${panels.length} values of ${label}`
+          : `${panels.length} values of ${label}`}
+      </span>
+      <GridPanelLayout isLazy templateColumns={GRID_TEMPLATE_COLUMNS[layout]}>
+        {panels.slice(0, MAX_PANELS).map((panel) => (
+          <VizPanel key={panel.title} title={panel.title} vizConfig={plainTimeSeriesGraph} data={panel.data} />
+        ))}
+      </GridPanelLayout>
+    </Stack>
+  );
+}
+
+/** The value of the label in a series, which is what the query grouped it by. */
+function getLabelValue(frame: DataFrame, label: string): string {
+  const field = frame.fields.find((f) => f.labels?.[label] !== undefined);
+  return field?.labels?.[label] ?? frame.name ?? frame.refId ?? label;
 }
 
 interface BreakdownPanelProps {
