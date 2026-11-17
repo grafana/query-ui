@@ -1,5 +1,5 @@
 import { type DataFrame, type PanelData, VariableSort } from '@grafana/data';
-import { GridPanelLayout, useVariableOptionsQuery, VizPanel } from '@grafana/scenes2';
+import { GridPanelLayout, useAdhocFilters, useVariableOptionsQuery, VizPanel } from '@grafana/scenes2';
 import { Button, Combobox, Field, LoadingPlaceholder, RadioButtonGroup, Stack } from '@grafana/ui';
 import React, { useMemo, useState } from 'react';
 
@@ -96,10 +96,15 @@ function LabelValuePanels({ metric, dsUid, label, layout }: LabelValuePanelsProp
       return [];
     }
 
-    return panelData.series.map((frame) => ({
-      title: getLabelValue(frame, label),
-      data: { ...panelData, series: [frame] },
-    }));
+    return panelData.series.map((frame) => {
+      const value = getLabelValue(frame, label);
+
+      return {
+        value,
+        title: value ?? frame.name ?? frame.refId ?? label,
+        data: { ...panelData, series: [frame] },
+      };
+    });
   }, [panelData, label]);
 
   if (data.isError) {
@@ -119,7 +124,14 @@ function LabelValuePanels({ metric, dsUid, label, layout }: LabelValuePanelsProp
       </span>
       <GridPanelLayout isLazy templateColumns={GRID_TEMPLATE_COLUMNS[layout]}>
         {panels.slice(0, MAX_PANELS).map((panel, index) => (
-          <SeriesPanel key={panel.title} title={panel.title} data={panel.data} index={index} />
+          <SeriesPanel
+            key={panel.title}
+            title={panel.title}
+            data={panel.data}
+            index={index}
+            label={label}
+            value={panel.value}
+          />
         ))}
       </GridPanelLayout>
     </Stack>
@@ -131,18 +143,42 @@ interface SeriesPanelProps {
   data: PanelData;
   /** Picks the series color, so that neighboring panels look different. */
   index: number;
+  /** The label the panel belongs to. */
+  label: string;
+  /** The value of the label in this panel's series. Without it the panel can't be added to the filters. */
+  value: string | undefined;
 }
 
-function SeriesPanel({ title, data, index }: SeriesPanelProps) {
+function SeriesPanel({ title, data, index, label, value }: SeriesPanelProps) {
   const vizConfig = useTimeSeriesConfig(index);
+  const { filters, onAddFilter } = useAdhocFilters();
 
-  return <VizPanel title={title} vizConfig={vizConfig} data={data} />;
+  const isFiltered = filters.some((f) => f.key === label && f.operator === '=' && f.value === value);
+
+  return (
+    <VizPanel
+      title={title}
+      vizConfig={vizConfig}
+      data={data}
+      actions={
+        value !== undefined ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={isFiltered}
+            onClick={() => onAddFilter({ key: label, operator: '=', value })}
+          >
+            Add to filters
+          </Button>
+        ) : undefined
+      }
+    />
+  );
 }
 
 /** The value of the label in a series, which is what the query grouped it by. */
-function getLabelValue(frame: DataFrame, label: string): string {
-  const field = frame.fields.find((f) => f.labels?.[label] !== undefined);
-  return field?.labels?.[label] ?? frame.name ?? frame.refId ?? label;
+function getLabelValue(frame: DataFrame, label: string): string | undefined {
+  return frame.fields.find((f) => f.labels?.[label] !== undefined)?.labels?.[label];
 }
 
 interface BreakdownPanelProps {
