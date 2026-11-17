@@ -3,7 +3,7 @@ import { Icon, Input, LinkButton, RadioButtonGroup, Stack } from '@grafana/ui';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
-import { plainTimeSeriesGraph } from '../components/sharedVisualizations';
+import { useTimeSeriesConfig } from '../components/sharedVisualizations';
 import { VAR_FILTERS, VAR_METRIC } from './shared/shared';
 import { GRID_TEMPLATE_COLUMNS, layoutOptions, type LayoutMode } from './shared/panelLayout';
 import { useMetricData } from './useMetricData';
@@ -41,8 +41,9 @@ export const MetricSelect = React.memo(function MetricSelect() {
 
   const filteredMetrics = useMemo(() => {
     const needle = search.trim().toLowerCase();
-    const all = metrics.data ?? [];
-    return needle ? all.filter((metric) => String(metric.value).toLowerCase().includes(needle)) : all;
+    // The index is the position in the full list, which keeps a panel's color the same while searching.
+    const all = (metrics.data ?? []).map((metric, index) => ({ name: String(metric.value), index }));
+    return needle ? all.filter(({ name }) => name.toLowerCase().includes(needle)) : all;
   }, [metrics.data, search]);
 
   return (
@@ -78,8 +79,8 @@ export const MetricSelect = React.memo(function MetricSelect() {
       {metrics.isError && <pre>{metrics.error.message}</pre>}
       {metrics.data && (
         <GridPanelLayout isLazy templateColumns={GRID_TEMPLATE_COLUMNS[layout]}>
-          {filteredMetrics.slice(0, MAX_PANELS).map((metric) => (
-            <MetricPanel key={String(metric.value)} metric={String(metric.value)} dsUid={ds} />
+          {filteredMetrics.slice(0, MAX_PANELS).map(({ name, index }) => (
+            <MetricPanel key={name} metric={name} dsUid={ds} index={index} />
           ))}
         </GridPanelLayout>
       )}
@@ -90,10 +91,13 @@ export const MetricSelect = React.memo(function MetricSelect() {
 interface MetricPanelProps {
   metric: string;
   dsUid: string;
+  /** Picks the series color. It is the position in the full metric list, so it stays put while searching. */
+  index: number;
 }
 
-const MetricPanel = React.memo(function MetricPanel({ metric, dsUid }: MetricPanelProps) {
+const MetricPanel = React.memo(function MetricPanel({ metric, dsUid, index }: MetricPanelProps) {
   const data = useMetricData(metric, dsUid);
+  const vizConfig = useTimeSeriesConfig(index);
   const location = useLocation();
 
   // Keeps the other query parameters, like the time range and data source
@@ -106,7 +110,7 @@ const MetricPanel = React.memo(function MetricPanel({ metric, dsUid }: MetricPan
   return (
     <VizPanel
       title={metric}
-      vizConfig={plainTimeSeriesGraph}
+      vizConfig={vizConfig}
       data={data.data}
       actions={
         <LinkButton size="sm" variant="secondary" href={getSelectUrl()}>

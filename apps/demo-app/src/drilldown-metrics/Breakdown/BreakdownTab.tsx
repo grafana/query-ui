@@ -1,9 +1,9 @@
-import { type DataFrame, VariableSort } from '@grafana/data';
+import { type DataFrame, type PanelData, VariableSort } from '@grafana/data';
 import { GridPanelLayout, useVariableOptionsQuery, VizPanel } from '@grafana/scenes2';
 import { Button, Combobox, Field, LoadingPlaceholder, RadioButtonGroup, Stack } from '@grafana/ui';
 import React, { useMemo, useState } from 'react';
 
-import { plainTimeSeriesGraph } from '../../components/sharedVisualizations';
+import { plainTimeSeriesGraph, useTimeSeriesConfig } from '../../components/sharedVisualizations';
 import { GRID_TEMPLATE_COLUMNS, layoutOptions, type LayoutMode } from '../shared/panelLayout';
 import { useMetricData } from '../useMetricData';
 
@@ -118,12 +118,25 @@ function LabelValuePanels({ metric, dsUid, label, layout }: LabelValuePanelsProp
           : `${panels.length} values of ${label}`}
       </span>
       <GridPanelLayout isLazy templateColumns={GRID_TEMPLATE_COLUMNS[layout]}>
-        {panels.slice(0, MAX_PANELS).map((panel) => (
-          <VizPanel key={panel.title} title={panel.title} vizConfig={plainTimeSeriesGraph} data={panel.data} />
+        {panels.slice(0, MAX_PANELS).map((panel, index) => (
+          <SeriesPanel key={panel.title} title={panel.title} data={panel.data} index={index} />
         ))}
       </GridPanelLayout>
     </Stack>
   );
+}
+
+interface SeriesPanelProps {
+  title: string;
+  data: PanelData;
+  /** Picks the series color, so that neighboring panels look different. */
+  index: number;
+}
+
+function SeriesPanel({ title, data, index }: SeriesPanelProps) {
+  const vizConfig = useTimeSeriesConfig(index);
+
+  return <VizPanel title={title} vizConfig={vizConfig} data={data} />;
 }
 
 /** The value of the label in a series, which is what the query grouped it by. */
