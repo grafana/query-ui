@@ -14,7 +14,10 @@ export {
   AdHocFilterEditor,
   type AdHocFilterEditorProps,
 } from './filters/AdHocFilterEditor';
-export { AdHocFiltersCombobox } from './filters/AdHocFiltersCombobox';
+export {
+  AdHocFiltersCombobox,
+  type AdHocFiltersComboboxProps,
+} from './filters/AdHocFiltersCombobox';
 export {
   type AdHocFilterWithLabels,
   AdhocFiltersContext,
@@ -22,6 +25,11 @@ export {
   AdhocFiltersProvider,
   type AdhocFiltersProviderProps,
 } from './filters/AdhocFiltersContext';
+export {
+  AdhocFiltersVariable,
+  type AdhocFiltersVariableProps,
+} from './filters/AdhocFiltersVariable';
+export { renderPrometheusLabelFilters } from './filters/utils';
 export { useAdhocFilters } from './hooks/useAdhocFilters';
 export { useDataQuery } from './hooks/useDataQuery';
 export { useTimeRange } from './hooks/useTimeRange';

@@ -10,15 +10,16 @@ import {
   type VariableValue,
   AdhocFiltersProvider,
   AdHocFiltersCombobox,
+  AdhocFiltersVariable,
 } from '@grafana/scenes2';
-import { LinkButton, Stack } from '@grafana/ui';
+import { Field, LinkButton, Stack } from '@grafana/ui';
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { PageWrapper } from '../components/PageWrapper';
 import { plainTimeSeriesGraph } from '../components/sharedVisualizations';
 import { MetricScene } from './MetricScene';
-import { VAR_METRIC, trailDS } from './shared/shared';
+import { VAR_FILTERS, VAR_METRIC, trailDS } from './shared/shared';
 import { useMetricData } from './useMetricData';
 
 /** Caps the number of panels so a large Prometheus instance doesn't fire thousands of queries. */
@@ -29,15 +30,19 @@ export function DrilldownMetrics() {
     <PageWrapper title="Drilldown Metrics">
       <DataSourceVariable name="ds" loading={true} pluginId="prometheus">
         <AdhocFiltersProvider datasource={trailDS}>
-          <DefineVariable name={VAR_METRIC}>
-            <Stack direction="column" gap={3}>
-              <Stack>
-                <VariableValueSelect name="ds" />
-                <AdHocFiltersCombobox />
+          <AdhocFiltersVariable name={VAR_FILTERS}>
+            <DefineVariable name={VAR_METRIC}>
+              <Stack direction="column" gap={3}>
+                <Stack>
+                  <VariableValueSelect name="ds" />
+                  <Field label="Filters">
+                    <AdHocFiltersCombobox />
+                  </Field>
+                </Stack>
+                <ViewRenderer />
               </Stack>
-              <ViewRenderer />
-            </Stack>
-          </DefineVariable>
+            </DefineVariable>
+          </AdhocFiltersVariable>
         </AdhocFiltersProvider>
       </DataSourceVariable>
     </PageWrapper>
@@ -53,9 +58,7 @@ function ViewRenderer() {
 
 const MetricSelect = React.memo(function MetricSelect() {
   const [ds, loading] = useInterpolator('${ds}');
-
-  // const query = `label_values({${VAR_FILTERS}}, __name__)`;
-  const query = `label_values({}, __name__)`;
+  const [query, _] = useInterpolator(`label_values({$${VAR_FILTERS}}, __name__)`);
 
   const metrics = useVariableOptionsQuery({
     enabled: !loading,
