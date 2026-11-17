@@ -1,5 +1,5 @@
 import {
-  PanelGridLayout,
+  GridPanelLayout,
   TimeRangeContextPicker,
   TimeRangeRefresh,
 } from '@grafana/scenes2';
@@ -37,11 +37,11 @@ export function PanelGridLayoutDemoPage() {
       actions={actions}
     >
       <Stack direction="column" gap={2}>
-        <PanelGridLayout>
+        <GridPanelLayout>
           {panelTitles.map((title) => (
             <DemoPanel key={title} title={title} />
           ))}
-        </PanelGridLayout>
+        </GridPanelLayout>
       </Stack>
     </PluginPage>
   );

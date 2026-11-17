@@ -4,6 +4,7 @@ import { TimeRangeContextProvider, UrlStateProvider } from '@grafana/scenes2';
 
 import { AdhocFiltersDemoPage } from './pages/AdhocFiltersDemoPage';
 import { HomePage } from './pages/HomePage';
+import { LazyGridDemoPage } from './pages/LazyGridDemoPage';
 import { PanelGridLayoutDemoPage } from './pages/PanelGridLayoutDemoPage';
 import { SinglePanelDemoPage } from './pages/SinglePanelDemoPage';
 
@@ -21,6 +22,7 @@ export function App() {
                 path="/panel-grid-layout-demo"
                 element={<PanelGridLayoutDemoPage />}
               />
+              <Route path="/lazy-grid-demo" element={<LazyGridDemoPage />} />
               <Route
                 path="/single-panel-demo"
                 element={<SinglePanelDemoPage />}

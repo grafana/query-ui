@@ -6,7 +6,7 @@ import {
   useVariable,
   useVariableOptionsQuery,
   VizPanel,
-  PanelGridLayout,
+  GridPanelLayout,
   type VariableValue,
   AdhocFiltersProvider,
   AdHocFiltersCombobox,
@@ -67,11 +67,11 @@ const MetricSelect = React.memo(function MetricSelect() {
     <>
       {metrics.isError && <pre>{metrics.error.message}</pre>}
       {metrics.data && (
-        <PanelGridLayout>
+        <GridPanelLayout isLazy>
           {metrics.data.slice(0, MAX_PANELS).map((metric) => (
             <MetricPanel key={String(metric.value)} metric={String(metric.value)} dsUid={ds} />
           ))}
-        </PanelGridLayout>
+        </GridPanelLayout>
       )}
     </>
   );
