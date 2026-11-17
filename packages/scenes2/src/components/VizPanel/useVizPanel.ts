@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
+  type AbsoluteTimeRange,
   applyFieldOverrides,
+  dateTime,
   getDefaultTimeRange,
   getPanelOptionsWithDefaults,
   LoadingState,
@@ -8,11 +10,25 @@ import {
 } from '@grafana/data';
 import { config, getPluginImportUtils } from '@grafana/runtime';
 
+import { TimeRangeContext } from '../../time/TimeRangeContext';
 import type { VizPanelProps } from './VizPanel';
 
 export function useVizPanel(props: VizPanelProps) {
   const { data: rawData, vizConfig } = props;
   const plugin = usePanelPlugin(vizConfig.pluginId);
+
+  // Optional: a panel rendered outside a provider has no range to change.
+  const onChangeTimeRangeFromContext =
+    useContext(TimeRangeContext)?.onChangeTimeRange;
+
+  const onChangeTimeRange = useCallback(
+    (range: AbsoluteTimeRange) => {
+      const from = dateTime(range.from);
+      const to = dateTime(range.to);
+      onChangeTimeRangeFromContext?.({ from, to, raw: { from, to } });
+    },
+    [onChangeTimeRangeFromContext],
+  );
 
   // Apply plugin option and field config defaults
   const withDefaults = useMemo(() => {
@@ -75,6 +91,7 @@ export function useVizPanel(props: VizPanelProps) {
     fieldConfig: withDefaults.fieldConfig,
     panelOptions: withDefaults.options,
     panelData: panelDataApplied,
+    onChangeTimeRange,
   };
 }
 

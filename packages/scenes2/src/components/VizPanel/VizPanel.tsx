@@ -16,8 +16,14 @@ export interface VizPanelProps {
 }
 
 export function VizPanel(props: VizPanelProps) {
-  const { plugin, isLoading, fieldConfig, panelOptions, panelData } =
-    useVizPanel(props);
+  const {
+    plugin,
+    isLoading,
+    fieldConfig,
+    panelOptions,
+    panelData,
+    onChangeTimeRange,
+  } = useVizPanel(props);
   const [ref, { width, height }] = useMeasure<HTMLDivElement>();
 
   return (
@@ -49,7 +55,7 @@ export function VizPanel(props: VizPanelProps) {
                     onFieldConfigChange={() => {}}
                     onOptionsChange={() => {}}
                     replaceVariables={(value: string) => value}
-                    onChangeTimeRange={() => {}}
+                    onChangeTimeRange={onChangeTimeRange}
                     eventBus={{} as EventBus}
                   />
                 )}
