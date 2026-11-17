@@ -7,27 +7,49 @@ import {
   AdhocFiltersProvider,
   AdHocFiltersCombobox,
   AdhocFiltersVariable,
+  TimeRangeContextPicker,
+  TimeRangeRefresh,
 } from '@grafana/scenes2';
 import { Box, Field, Stack } from '@grafana/ui';
 
-import { PageWrapper } from '../components/PageWrapper';
 import { MetricScene } from './MetricScene';
 import { MetricSelect } from './MetricSelect';
 import { VAR_FILTERS, VAR_METRIC, trailDS } from './shared/shared';
+import { PLUGIN_BASE_URL } from 'constants';
+import { PluginPage } from '@grafana/runtime';
+import { locationUtil, NavModelItem, PageLayoutType } from '@grafana/data';
+import { useLocation } from 'react-router-dom';
 
 export function DrilldownMetrics() {
+  const location = useLocation();
+  const search = new URLSearchParams(location.search);
+  const metric = search.get('var-metric');
+
+  let pageNav: NavModelItem = {
+    text: 'Drilldown metrics',
+    parentItem: { text: 'Scenes2 demos', url: PLUGIN_BASE_URL },
+    url: locationUtil.getUrlForPartial(location, { 'var-metric': null }),
+  };
+
+  if (metric) {
+    pageNav = { text: metric, parentItem: pageNav };
+  }
+
   return (
-    <PageWrapper title="Drilldown Metrics">
+    <PluginPage pageNav={pageNav} layout={PageLayoutType.Canvas}>
       <DataSourceVariable name="ds" loading={true} pluginId="prometheus">
         <AdhocFiltersProvider datasource={trailDS}>
           <AdhocFiltersVariable name={VAR_FILTERS}>
             <DefineVariable name={VAR_METRIC}>
               <Stack direction="column" gap={2}>
-                <Stack>
+                <Stack alignItems="flex-end">
                   <VariableValueSelect name="ds" />
                   <Field label="Filters" noMargin>
                     <AdHocFiltersCombobox />
                   </Field>
+                  <div style={{ flexGrow: 1 }} />
+                  <TimeRangeContextPicker />
+                  <TimeRangeRefresh />
                 </Stack>
                 <ViewRenderer />
               </Stack>
@@ -35,7 +57,7 @@ export function DrilldownMetrics() {
           </AdhocFiltersVariable>
         </AdhocFiltersProvider>
       </DataSourceVariable>
-    </PageWrapper>
+    </PluginPage>
   );
 }
 
