@@ -4,11 +4,7 @@ import { TimeRangeContextProvider, UrlStateProvider } from '@grafana/scenes2';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PluginPropsContext } from './utils/utils.plugin';
 import { DemoHome } from 'components/DemoHome';
-import { PanelGridLayoutDemo } from 'components/PanelGridLayoutDemo';
-import { VariablesDemo } from 'components/VariablesDemo';
-import { DataSourceVariableDemo } from 'components/DataSourceVariableDemo';
-import { ROUTES } from './constants';
-import { DrilldownMetrics } from 'drilldown-metrics/DrilldownMetrics';
+import { demos } from './demos';
 
 const queryClient = new QueryClient();
 
@@ -19,10 +15,9 @@ function App(props: AppRootProps) {
         <UrlStateProvider>
           <TimeRangeContextProvider>
             <Routes>
-              <Route path={ROUTES.PanelGridLayoutDemo} element={<PanelGridLayoutDemo />} />
-              <Route path={ROUTES.VariablesDemo} element={<VariablesDemo />} />
-              <Route path={ROUTES.DataSourceVariableDemo} element={<DataSourceVariableDemo />} />
-              <Route path={ROUTES.DrilldownMetrics} element={<DrilldownMetrics />} />
+              {demos.map(({ route, component: Component }) => (
+                <Route key={route} path={route} element={<Component />} />
+              ))}
               <Route path="*" element={<DemoHome />} />
             </Routes>
           </TimeRangeContextProvider>

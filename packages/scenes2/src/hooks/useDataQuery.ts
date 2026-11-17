@@ -1,13 +1,13 @@
 import {
-  type QueryKey,
+  keepPreviousData,
   useQuery,
-  useQueryClient,
   type UseQueryOptions,
   type UseQueryResult,
 } from '@tanstack/react-query';
-import { useContext, useId } from 'react';
+import { useContext, useId, useMemo } from 'react';
 import { lastValueFrom } from 'rxjs';
 import {
+  LoadingState,
   rangeUtil,
   type DataQuery,
   type DataQueryRequest,
@@ -41,7 +41,6 @@ export function useDataQuery<T extends DataQuery>(
   const dataSourceSrv = getDataSourceSrv();
   const timeRangeCtx = useTimeRange();
   const adhocFiltersCtx = useContext(AdhocFiltersContext);
-  const queryClient = useQueryClient();
   const interpolate = (value: string) => value; // TODO: use actual variable interpolation
   const timeRange = timeRangeCtx.value;
   const staleTime = options.staleTime ?? 30000;
@@ -54,13 +53,6 @@ export function useDataQuery<T extends DataQuery>(
     staleTime: Infinity,
   });
 
-  const loadPreviousData = (queryKey: QueryKey) => () => {
-    const data = queryClient.getQueriesData<PanelData>({ queryKey });
-    const avail = data.filter((x) => !!x[1]);
-    const last = avail[avail.length - 1]?.[1];
-    return last;
-  };
-
   const timeRangeKey = `${timeRange.from.valueOf()}-${timeRange.to.valueOf()}`;
   const queries = options.queries;
   const maxDataPoints = options.maxDataPoints ?? 500;
@@ -70,7 +62,9 @@ export function useDataQuery<T extends DataQuery>(
     enabled: dsQuery.data != null && options.enabled !== false,
     staleTime: staleTime,
     queryKey: queryKey,
-    placeholderData: loadPreviousData(queryKey),
+    // A refresh or a time range change gives the query a new key. Keep showing
+    // the previous result until the new one arrives instead of clearing it.
+    placeholderData: keepPreviousData,
     queryFn: () => {
       const request: DataQueryRequest = {
         requestId: requestId + `-${Date.now()}`,
@@ -116,7 +110,24 @@ export function useDataQuery<T extends DataQuery>(
     },
   };
 
-  return useQuery<PanelData, Error>(queryOptions);
+  const result = useQuery<PanelData, Error>(queryOptions);
+  const { data, isFetching } = result;
+
+  // The previous result keeps its Done state while it stands in for the new
+  // query. Mark it as loading so panels show that a query is running.
+  const dataWithState = useMemo(
+    () =>
+      data && isFetching && data.state !== LoadingState.Loading
+        ? { ...data, state: LoadingState.Loading }
+        : data,
+    [data, isFetching],
+  );
+
+  if (dataWithState === data) {
+    return result;
+  }
+
+  return { ...result, data: dataWithState } as UseQueryResult<PanelData, Error>;
 }
 
 export function findFirstDatasource(

@@ -1,27 +1,15 @@
 import { Stack, TextLink } from '@grafana/ui';
-import { ROUTES } from '../constants';
+import { demos } from '../demos';
 import { prefixRoute } from '../utils/utils.routing';
 import { PageWrapper } from './PageWrapper';
-
-interface DemoScenario {
-  route: ROUTES;
-  label: string;
-}
-
-const scenarios: DemoScenario[] = [
-  { route: ROUTES.PanelGridLayoutDemo, label: 'Panel grid layout demo' },
-  { route: ROUTES.VariablesDemo, label: 'Variables demo' },
-  { route: ROUTES.DataSourceVariableDemo, label: 'Data source variable demo' },
-  { route: ROUTES.DrilldownMetrics, label: 'Drilldown metrics demo' },
-];
 
 export function DemoHome() {
   return (
     <PageWrapper title="Select demo / scenario">
       <Stack direction="column" gap={2}>
-        {scenarios.map((scenario) => (
-          <TextLink key={scenario.route} href={prefixRoute(scenario.route)}>
-            {scenario.label}
+        {demos.map((demo) => (
+          <TextLink key={demo.route} href={prefixRoute(demo.route)}>
+            {demo.label}
           </TextLink>
         ))}
       </Stack>
