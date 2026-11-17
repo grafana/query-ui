@@ -35,9 +35,13 @@ export { useDataQuery } from './hooks/useDataQuery';
 export { useTimeRange } from './hooks/useTimeRange';
 export { useVariable } from './hooks/useVariable';
 export {
-  PanelGridLayout,
-  type PanelGridLayoutProps,
-} from './layout/PanelGridLayout';
+  GridPanelLayout,
+  GridPanelLayoutItem,
+  type GridPanelLayoutItemProps,
+  type GridPanelLayoutMdOptions,
+  type GridPanelLayoutProps,
+} from './layout/GridPanelLayout';
+export { LazyLoader, type LazyLoaderProps } from './layout/LazyLoader';
 export {
   TimeRangeContext,
   TimeRangeContextProvider,

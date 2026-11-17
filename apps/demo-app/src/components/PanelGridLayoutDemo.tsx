@@ -1,4 +1,4 @@
-import { PanelGridLayout, useDataQuery, VizConfigBuilders, VizPanel } from '@grafana/scenes2';
+import { GridPanelLayout, useDataQuery, VizConfigBuilders, VizPanel } from '@grafana/scenes2';
 
 import { PageWrapper } from './PageWrapper';
 
@@ -9,11 +9,11 @@ const panelTitles = ['Panel A', 'Panel B', 'Panel C', 'Panel D'];
 export function PanelGridLayoutDemo() {
   return (
     <PageWrapper title="Panel grid layout demo">
-      <PanelGridLayout>
+      <GridPanelLayout>
         {panelTitles.map((title) => (
           <DemoPanel key={title} title={title} />
         ))}
-      </PanelGridLayout>
+      </GridPanelLayout>
     </PageWrapper>
   );
 }
