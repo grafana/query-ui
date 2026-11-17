@@ -14,7 +14,10 @@ export {
   AdHocFilterEditor,
   type AdHocFilterEditorProps,
 } from './filters/AdHocFilterEditor';
-export { AdHocFiltersCombobox } from './filters/AdHocFiltersCombobox';
+export {
+  AdHocFiltersCombobox,
+  type AdHocFiltersComboboxProps,
+} from './filters/AdHocFiltersCombobox';
 export {
   type AdHocFilterWithLabels,
   AdhocFiltersContext,

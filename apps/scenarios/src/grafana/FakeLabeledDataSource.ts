@@ -42,7 +42,7 @@ export class FakeLabeledDataSource extends DataSourceApi<FakeLabeledQuery> {
     const to = range.to.valueOf();
     const stepMs = Math.max(1000, Math.floor((to - from) / maxDataPoints));
     const filterSuffix = filters?.length
-      ? ` (${filters.map((f) => `${f.key}${f.operator}${f.value}`).join(', ')})`
+      ? ` (${filters.map((f) => `${f.key}${f.operator}${f.values?.join('|') ?? f.value}`).join(', ')})`
       : '';
 
     return {
