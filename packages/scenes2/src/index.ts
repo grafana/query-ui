@@ -54,8 +54,10 @@ export {
   UrlStateContext,
   UrlStateProvider,
   type UrlStateProviderProps,
+  type UrlValue,
   type UrlValues,
   useUrlState,
+  type UseUrlStateOptions,
 } from './url/UrlStateContext';
 export {
   DataSourceVariable,

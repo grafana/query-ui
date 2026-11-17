@@ -16,13 +16,26 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { UrlKeyManager } from './UrlKeyMapper';
 
 /**
+ * What one url key holds: a string, or a list of strings for a key that is in
+ * the query string once per value, like `?tag=a&tag=b`.
+ */
+export type UrlValue = string | readonly string[];
+
+/**
+ * What `T` has to look like to name url state: every key holds a
+ * {@link UrlValue}.
+ */
+export type UrlStateShape<T> = { [K in keyof T]?: UrlValue };
+
+/**
  * The value of each url key a consumer claimed, under the name it asked for
  * rather than the one it was given.
  *
  * Reading, a key the query string has no value for is left out. Writing, a key
- * left out is untouched and a key set to `undefined` is removed.
+ * left out is untouched and a key set to `undefined` is removed, and so is one
+ * set to an empty list.
  */
-export type UrlValues<T> = { readonly [K in keyof T]?: string | undefined };
+export type UrlValues<T> = { readonly [K in keyof T]?: T[K] | undefined };
 
 /**
  * The query string of one subtree, and the way to change it.
@@ -44,7 +57,7 @@ export interface UrlStateContextValue {
    */
   subscribe(listener: () => void): () => void;
   /** Writes url keys, under the names the query string carries. */
-  write(values: Record<string, string | undefined>): void;
+  write(values: Record<string, UrlValue | undefined>): void;
 }
 
 /**
@@ -146,7 +159,18 @@ export function UrlStateProvider({
   );
 }
 
-export interface UseUrlStateOptions {
+export interface UseUrlStateOptions<
+  T extends UrlStateShape<T> = UrlStateShape<object>,
+> {
+  /**
+   * The keys that hold a list of strings instead of one string. Each value in
+   * the list is a parameter of its own in the query string, so a key with no
+   * parameters reads as missing and a list of one reads as a list of one.
+   *
+   * Keys that are not named here read as the first value the query string has
+   * for them. Read once, on mount, like the keys themselves.
+   */
+  multiValueKeys?: readonly (keyof T & string)[];
   /**
    * Keeps the state to this component, as if there were no
    * {@link UrlStateProvider} above it: nothing is read from or written to the
@@ -192,15 +216,18 @@ export interface UseUrlStateOptions {
  * component has to go through the returned writer instead of touching the query
  * string itself.
  */
-export function useUrlState<T extends object>(
+export function useUrlState<T extends UrlStateShape<T>>(
   keys: readonly (keyof T & string)[],
-  options: UseUrlStateOptions = {},
+  options: UseUrlStateOptions<T> = {},
 ): [UrlValues<T>, (update: T) => void] {
   const { registry, getParams, subscribe, write } = useUrlStateStore(
     options.skip,
   );
   const owner = useId();
   const [claimedKeys] = useState(() => [...keys]);
+  const [multiValueKeys] = useState<ReadonlySet<string>>(
+    () => new Set(options.multiValueKeys),
+  );
 
   // Claimed while rendering so that state initializers, which run before any
   // effect, can already read their values out of the URL. Claiming is keyed by
@@ -226,27 +253,41 @@ export function useUrlState<T extends object>(
   // keys alone gives the same object back, so React has nothing to re-render,
   // and neither does anything below that took the values into a dependency
   // array.
-  const snapshot = useRef<Record<string, string> | undefined>(undefined);
+  const snapshot = useRef<Record<string, UrlValue> | undefined>(undefined);
 
   const getSnapshot = useCallback(() => {
-    const values = readValues(getParams(), claimed);
+    const values = readValues(getParams(), claimed, multiValueKeys);
     const previous = snapshot.current;
 
     if (previous && sameValues(previous, values)) {
       return previous;
     }
 
+    // A list that did not move keeps its identity, even when another key did.
+    for (const [key, value] of Object.entries(values)) {
+      const before = previous?.[key];
+
+      if (
+        typeof value !== 'string' &&
+        before !== undefined &&
+        typeof before !== 'string' &&
+        sameList(before, value)
+      ) {
+        values[key] = before;
+      }
+    }
+
     snapshot.current = values;
 
     return values;
-  }, [getParams, claimed]);
+  }, [getParams, claimed, multiValueKeys]);
 
   const state = useSyncExternalStore(subscribe, getSnapshot) as UrlValues<T>;
 
   const set = useCallback(
     (update: UrlValues<T>) => {
-      const named: Record<string, string | undefined> = update;
-      const mapped: Record<string, string | undefined> = {};
+      const named: Record<string, UrlValue | undefined> = update;
+      const mapped: Record<string, UrlValue | undefined> = {};
 
       for (const [key, value] of Object.entries(named)) {
         mapped[urlKeyOf(claimed, key)] = value;
@@ -323,14 +364,28 @@ function notify(listeners: ReadonlySet<() => void>): void {
   }
 }
 
-/** Reads the claimed url keys out of `params`, under the claimed names. */
+/**
+ * Reads the claimed url keys out of `params`, under the claimed names. A key in
+ * `multiValueKeys` reads as the list of all its parameters.
+ */
 function readValues(
   params: URLSearchParams,
   claimed: Readonly<Record<string, string>>,
-): Record<string, string> {
-  const values: Record<string, string> = {};
+  multiValueKeys: ReadonlySet<string>,
+): Record<string, UrlValue> {
+  const values: Record<string, UrlValue> = {};
 
   for (const [key, urlKey] of Object.entries(claimed)) {
+    if (multiValueKeys.has(key)) {
+      const all = params.getAll(urlKey);
+
+      if (all.length > 0) {
+        values[key] = all;
+      }
+
+      continue;
+    }
+
     const value = params.get(urlKey);
 
     if (value !== null) {
@@ -343,40 +398,69 @@ function readValues(
 
 /**
  * Returns `params` with `values` applied, or `params` itself when it already
- * holds them. A value of `undefined` removes its key.
+ * holds them. A value of `undefined`, or an empty list, removes its key.
  */
 function applyValues(
   params: URLSearchParams,
-  values: Record<string, string | undefined>,
+  values: Record<string, UrlValue | undefined>,
 ): URLSearchParams {
   const next = new URLSearchParams(params);
   let changed = false;
 
   for (const [urlKey, value] of Object.entries(values)) {
-    if (value === undefined) {
-      if (next.has(urlKey)) {
-        next.delete(urlKey);
-        changed = true;
-      }
-    } else if (next.get(urlKey) !== value) {
+    const wanted = toList(value);
+
+    if (sameList(next.getAll(urlKey), wanted)) {
+      continue;
+    }
+
+    changed = true;
+
+    if (typeof value === 'string') {
+      // Replaced where it stands, so that the key keeps its place.
       next.set(urlKey, value);
-      changed = true;
+      continue;
+    }
+
+    next.delete(urlKey);
+
+    for (const item of wanted) {
+      next.append(urlKey, item);
     }
   }
 
   return changed ? next : params;
 }
 
+function toList(value: UrlValue | undefined): readonly string[] {
+  if (value === undefined) {
+    return [];
+  }
+
+  return typeof value === 'string' ? [value] : value;
+}
+
+function sameList(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((item, index) => item === b[index]);
+}
+
 /** Whether `a` and `b` hold the same keys with the same values. */
 function sameValues(
-  a: Readonly<Record<string, unknown>>,
-  b: Readonly<Record<string, unknown>>,
+  a: Readonly<Record<string, UrlValue>>,
+  b: Readonly<Record<string, UrlValue>>,
 ): boolean {
   const keys = Object.keys(a);
 
   return (
     keys.length === Object.keys(b).length &&
-    keys.every((key) => a[key] === b[key])
+    keys.every((key) => {
+      const left = a[key];
+      const right = b[key];
+
+      return left === undefined || right === undefined
+        ? left === right
+        : sameList(toList(left), toList(right));
+    })
   );
 }
 
