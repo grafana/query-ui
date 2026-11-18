@@ -61,9 +61,17 @@ test.describe('lazy grid layout', () => {
     await expect(page.getByTestId(`lazy-panel-${LAST_PANEL}`)).toBeVisible();
 
     // Scrolling straight to the bottom can skip middle rows; scroll back up
-    // in steps so each one passes through the viewport.
+    // in steps so each one passes through the viewport. IntersectionObserver
+    // only checks once per rendered frame, so each step waits two frames.
+    // Without the wait, several steps can land in one frame and the rows
+    // they pass over never mount.
     for (let y = await page.evaluate(() => window.scrollY); y > 0; y -= 300) {
-      await page.evaluate((top) => window.scrollTo(0, top), y);
+      await page.evaluate(async (top) => {
+        window.scrollTo(0, top);
+        for (let frame = 0; frame < 2; frame++) {
+          await new Promise(requestAnimationFrame);
+        }
+      }, y);
     }
 
     await expect(page.getByTestId('mounted-count')).toHaveText(

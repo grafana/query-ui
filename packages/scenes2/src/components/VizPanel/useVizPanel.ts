@@ -1,9 +1,11 @@
 import { QueryClientContext } from '@tanstack/react-query';
+import { cloneDeep, merge } from 'lodash';
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
   type AbsoluteTimeRange,
   applyFieldOverrides,
   dateTime,
+  type FieldConfigSource,
   getDefaultTimeRange,
   getPanelOptionsWithDefaults,
   LoadingState,
@@ -12,11 +14,76 @@ import {
 import { config, getPluginImportUtils } from '@grafana/runtime';
 
 import { TimeRangeContext } from '../../time/TimeRangeContext';
+import type { VizConfig } from './PanelBuilders/types';
 import type { VizPanelProps } from './VizPanel';
+
+/**
+ * Field config and options changed by the panel itself, for example by
+ * toggling series in the legend. They belong to one vizConfig instance:
+ * a new vizConfig prop discards them.
+ */
+interface TransientConfig {
+  vizConfig: VizConfig;
+  fieldConfig?: FieldConfigSource;
+  options?: PanelOptions;
+}
+
+type PanelOptions = Record<string, unknown>;
 
 export function useVizPanel(props: VizPanelProps) {
   const { data: rawData, vizConfig } = props;
   const plugin = usePanelPlugin(vizConfig.pluginId);
+
+  const [transient, setTransient] = useState<TransientConfig>(() => ({
+    vizConfig,
+  }));
+
+  // Comparing during render instead of resetting in an effect means the first
+  // render with a new vizConfig already uses it, with no stale frame between.
+  const isTransientCurrent = transient.vizConfig === vizConfig;
+  const currentFieldConfig =
+    (isTransientCurrent && transient.fieldConfig) || vizConfig.fieldConfig;
+  // VizConfig types its options as a partial of the plugin's option type,
+  // which carries no index signature.
+  const currentOptions =
+    (isTransientCurrent && transient.options) ||
+    (vizConfig.options as PanelOptions);
+
+  /**
+   * Merges the update into the current field config, or replaces it when
+   * `replace` is true. The change lasts until the vizConfig prop changes.
+   */
+  const onFieldConfigChange = useCallback(
+    (update: FieldConfigSource, replace?: boolean) => {
+      setTransient((prev) => {
+        const base = prev.vizConfig === vizConfig ? prev : { vizConfig };
+        const current = base.fieldConfig ?? vizConfig.fieldConfig;
+        const fieldConfig = replace
+          ? update
+          : merge(cloneDeep(current), update);
+
+        return { ...base, fieldConfig };
+      });
+    },
+    [vizConfig],
+  );
+
+  /**
+   * Merges the update into the current options, or replaces them when
+   * `replace` is true. The change lasts until the vizConfig prop changes.
+   */
+  const onOptionsChange = useCallback(
+    (update: PanelOptions, replace?: boolean) => {
+      setTransient((prev) => {
+        const base = prev.vizConfig === vizConfig ? prev : { vizConfig };
+        const current = base.options ?? (vizConfig.options as PanelOptions);
+        const options = replace ? update : merge(cloneDeep(current), update);
+
+        return { ...base, options };
+      });
+    },
+    [vizConfig],
+  );
 
   // Optional: a panel rendered outside a provider has no range to change.
   const onChangeTimeRangeFromContext =
@@ -34,18 +101,16 @@ export function useVizPanel(props: VizPanelProps) {
   // Apply plugin option and field config defaults
   const withDefaults = useMemo(() => {
     if (!plugin) {
-      return { fieldConfig: vizConfig.fieldConfig, options: vizConfig.options };
+      return { fieldConfig: currentFieldConfig, options: currentOptions };
     }
 
     return getPanelOptionsWithDefaults({
       plugin,
-      // VizConfig types its options as a partial of the plugin's option type,
-      // which carries no index signature.
-      currentOptions: vizConfig.options as Record<string, unknown>,
-      currentFieldConfig: vizConfig.fieldConfig,
+      currentOptions,
+      currentFieldConfig,
       isAfterPluginChange: false,
     });
-  }, [plugin, vizConfig.options, vizConfig.fieldConfig]);
+  }, [plugin, currentOptions, currentFieldConfig]);
 
   const rawFrames = rawData?.series;
   const timeZone = rawData?.request?.timezone;
@@ -106,6 +171,8 @@ export function useVizPanel(props: VizPanelProps) {
     panelOptions: withDefaults.options,
     panelData: panelDataApplied,
     onChangeTimeRange,
+    onFieldConfigChange,
+    onOptionsChange,
   };
 }
 
