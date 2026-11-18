@@ -26,6 +26,7 @@ function DemoPanel({ title }: { title: string }) {
         datasource: { uid: 'PD8C576611E62080A' },
         scenarioId: 'random_walk',
         alias: title,
+        seriesCount: 10,
       },
     ],
     maxDataPoints: 30,
