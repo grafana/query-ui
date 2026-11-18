@@ -1,3 +1,4 @@
+import { property } from 'lodash';
 import React, { useContext } from 'react';
 
 import { VariableContext, type VariableContextState } from './types';
@@ -16,7 +17,7 @@ export function ObjectVariable<T extends object>({
   const parentContext = useContext(VariableContext);
   const context = useVariableContextState({
     name,
-    value: { value, label: value },
+    value: value,
     loading: false,
     parent: parentContext,
   });
@@ -48,7 +49,7 @@ function useVariableContextState<T>(
     loading,
     error,
     getValue: (_fieldPath?: string) => {
-      return value;
+      return getFieldAccessor(_fieldPath ?? '')(value);
     },
     onChange: (newValue: T) => {
       setValue(newValue);
@@ -58,4 +59,19 @@ function useVariableContextState<T>(
     onOptionsChange: () => {},
     parent: input.parent,
   };
+}
+
+const fieldAccessorCache: FieldAccessorCache = {};
+
+function getFieldAccessor(fieldPath: string) {
+  const accessor = fieldAccessorCache[fieldPath];
+  if (accessor) {
+    return accessor;
+  }
+
+  return (fieldAccessorCache[fieldPath] = property(fieldPath));
+}
+
+interface FieldAccessorCache {
+  [key: string]: (obj: unknown) => unknown;
 }
