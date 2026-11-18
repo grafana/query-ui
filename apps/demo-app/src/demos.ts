@@ -1,5 +1,6 @@
 import { ComponentType } from 'react';
 import { DataSourceVariableDemo } from 'components/DataSourceVariableDemo';
+import { ManySeriesDemo } from 'components/ManySeriesDemo';
 import { PanelGridLayoutDemo } from 'components/PanelGridLayoutDemo';
 import { SlowQueryDemo } from 'components/SlowQueryDemo';
 import { VariablesDemo } from 'components/VariablesDemo';
@@ -22,4 +23,5 @@ export const demos: DemoScenario[] = [
   { route: 'data-source-variable-demo', label: 'Data source variable demo', component: DataSourceVariableDemo },
   { route: 'drilldown-metrics', label: 'Drilldown metrics demo', component: DrilldownMetrics },
   { route: 'slow-query-demo', label: 'Slow query demo', component: SlowQueryDemo },
+  { route: 'many-series-demo', label: 'Many series demo', component: ManySeriesDemo },
 ];

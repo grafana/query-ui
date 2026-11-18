@@ -1,10 +1,11 @@
 import { css } from '@emotion/css';
 import type { ReactNode, RefCallback } from 'react';
 import { useMeasure } from 'react-use';
-import { type EventBus, LoadingState, type PanelData } from '@grafana/data';
-import { PanelChrome } from '@grafana/ui';
+import { LoadingState, type PanelData } from '@grafana/data';
+import { PanelChrome, PanelContextProvider } from '@grafana/ui';
 
 import type { VizConfig } from './PanelBuilders/types';
+import { usePanelContextState } from './usePanelContextState';
 import { useVizPanel } from './useVizPanel';
 
 export interface VizPanelProps {
@@ -24,46 +25,57 @@ export function VizPanel(props: VizPanelProps) {
     panelData,
     onChangeTimeRange,
     onCancelQuery,
+    onFieldConfigChange,
+    onOptionsChange,
   } = useVizPanel(props);
+  const panelContext = usePanelContextState({
+    fieldConfig,
+    options: panelOptions,
+    frames: panelData.series,
+    onFieldConfigChange,
+    onOptionsChange,
+  });
   const [ref, { width, height }] = useMeasure<HTMLDivElement>();
 
   return (
     <div className={relativeWrapper}>
       <div ref={ref as RefCallback<HTMLDivElement>} className={absoluteWrapper}>
         {width > 0 && height > 0 && (
-          <PanelChrome
-            title={props.title ?? ''}
-            width={width}
-            height={height}
-            loadingState={isLoading ? LoadingState.Loading : undefined}
-            actions={props.actions}
-            onCancelQuery={onCancelQuery}
-          >
-            {(innerWidth, innerHeight) => (
-              <>
-                {plugin?.panel && (
-                  <plugin.panel
-                    id={1}
-                    title={props.title ?? ''}
-                    options={panelOptions}
-                    data={panelData}
-                    timeZone={'browser'}
-                    width={innerWidth}
-                    height={innerHeight}
-                    renderCounter={0}
-                    timeRange={panelData.timeRange}
-                    fieldConfig={fieldConfig}
-                    transparent={false}
-                    onFieldConfigChange={() => {}}
-                    onOptionsChange={() => {}}
-                    replaceVariables={(value: string) => value}
-                    onChangeTimeRange={onChangeTimeRange}
-                    eventBus={{} as EventBus}
-                  />
-                )}
-              </>
-            )}
-          </PanelChrome>
+          <PanelContextProvider value={panelContext}>
+            <PanelChrome
+              title={props.title ?? ''}
+              width={width}
+              height={height}
+              loadingState={isLoading ? LoadingState.Loading : undefined}
+              actions={props.actions}
+              onCancelQuery={onCancelQuery}
+            >
+              {(innerWidth, innerHeight) => (
+                <>
+                  {plugin?.panel && (
+                    <plugin.panel
+                      id={1}
+                      title={props.title ?? ''}
+                      options={panelOptions}
+                      data={panelData}
+                      timeZone={'browser'}
+                      width={innerWidth}
+                      height={innerHeight}
+                      renderCounter={0}
+                      timeRange={panelData.timeRange}
+                      fieldConfig={fieldConfig}
+                      transparent={false}
+                      onFieldConfigChange={onFieldConfigChange}
+                      onOptionsChange={onOptionsChange}
+                      replaceVariables={(value: string) => value}
+                      onChangeTimeRange={onChangeTimeRange}
+                      eventBus={panelContext.eventBus}
+                    />
+                  )}
+                </>
+              )}
+            </PanelChrome>
+          </PanelContextProvider>
         )}
       </div>
     </div>

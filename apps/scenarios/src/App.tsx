@@ -5,6 +5,7 @@ import { TimeRangeContextProvider, UrlStateProvider } from '@grafana/scenes2';
 import { AdhocFiltersDemoPage } from './pages/AdhocFiltersDemoPage';
 import { HomePage } from './pages/HomePage';
 import { LazyGridDemoPage } from './pages/LazyGridDemoPage';
+import { ManySeriesDemoPage } from './pages/ManySeriesDemoPage';
 import { PanelGridLayoutDemoPage } from './pages/PanelGridLayoutDemoPage';
 import { SinglePanelDemoPage } from './pages/SinglePanelDemoPage';
 import { SlowQueryDemoPage } from './pages/SlowQueryDemoPage';
@@ -33,6 +34,10 @@ export function App() {
                 element={<AdhocFiltersDemoPage />}
               />
               <Route path="/slow-query-demo" element={<SlowQueryDemoPage />} />
+              <Route
+                path="/many-series-demo"
+                element={<ManySeriesDemoPage />}
+              />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </TimeRangeContextProvider>

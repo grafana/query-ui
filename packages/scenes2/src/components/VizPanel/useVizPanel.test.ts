@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import {
   createTheme,
   getDefaultTimeRange,
@@ -85,5 +85,85 @@ describe('useVizPanel isLoading', () => {
     );
 
     expect(result.current.isLoading).toBe(true);
+  });
+});
+
+describe('useVizPanel onFieldConfigChange', () => {
+  // No plugin, so the hook returns the field config without plugin defaults
+  beforeEach(() => {
+    mockPlugin(undefined);
+  });
+
+  function makeVizConfig(unit: string): VizConfig {
+    return {
+      ...vizConfig,
+      fieldConfig: { defaults: { unit }, overrides: [] },
+    } as VizConfig;
+  }
+
+  it('merges a change into the current field config', () => {
+    const config = makeVizConfig('short');
+    const { result } = renderHook(() => useVizPanel({ vizConfig: config }));
+
+    act(() => {
+      result.current.onFieldConfigChange({
+        defaults: { decimals: 2 },
+        overrides: [],
+      });
+    });
+
+    expect(result.current.fieldConfig.defaults).toEqual({
+      unit: 'short',
+      decimals: 2,
+    });
+  });
+
+  it('replaces the field config when replace is true', () => {
+    const config = makeVizConfig('short');
+    const { result } = renderHook(() => useVizPanel({ vizConfig: config }));
+
+    act(() => {
+      result.current.onFieldConfigChange(
+        { defaults: { decimals: 2 }, overrides: [] },
+        true,
+      );
+    });
+
+    expect(result.current.fieldConfig.defaults).toEqual({ decimals: 2 });
+  });
+
+  it('keeps the change across re-renders with the same vizConfig', () => {
+    const config = makeVizConfig('short');
+    const { result, rerender } = renderHook(
+      ({ vizConfig }: { vizConfig: VizConfig }) => useVizPanel({ vizConfig }),
+      { initialProps: { vizConfig: config } },
+    );
+
+    act(() => {
+      result.current.onFieldConfigChange(
+        { defaults: { unit: 'bytes' }, overrides: [] },
+        true,
+      );
+    });
+    rerender({ vizConfig: config });
+
+    expect(result.current.fieldConfig.defaults.unit).toBe('bytes');
+  });
+
+  it('discards the change when a new vizConfig arrives', () => {
+    const { result, rerender } = renderHook(
+      ({ vizConfig }: { vizConfig: VizConfig }) => useVizPanel({ vizConfig }),
+      { initialProps: { vizConfig: makeVizConfig('short') } },
+    );
+
+    act(() => {
+      result.current.onFieldConfigChange(
+        { defaults: { unit: 'bytes' }, overrides: [] },
+        true,
+      );
+    });
+    rerender({ vizConfig: makeVizConfig('percent') });
+
+    expect(result.current.fieldConfig.defaults.unit).toBe('percent');
   });
 });

@@ -21,6 +21,8 @@ export interface FakeRandomWalkQuery extends DataQuery {
    * slowest query.
    */
   delayMs?: number;
+  /** Returns this many series instead of one, like the testdata data source. */
+  seriesCount?: number;
 }
 
 /**
@@ -44,9 +46,21 @@ export class FakeRandomWalkDataSource extends DataSourceApi<FakeRandomWalkQuery>
     const delayMs = Math.max(0, ...targets.map((t) => t.delayMs ?? 0));
 
     const response = (): DataQueryResponse => ({
-      data: targets.map((target) =>
-        buildRandomWalkFrame(target, from, to, stepMs),
-      ),
+      data: targets.flatMap((target) => {
+        const seriesCount = target.seriesCount ?? 1;
+        const baseName = target.alias ?? target.refId;
+
+        return Array.from({ length: seriesCount }, (_, i) =>
+          buildRandomWalkFrame(
+            target.refId,
+            // A single series keeps the plain name the other demos expect
+            seriesCount === 1 ? baseName : `${baseName}-series-${i + 1}`,
+            from,
+            to,
+            stepMs,
+          ),
+        );
+      }),
     });
 
     // A timer stops when it is unsubscribed, the way a canceled fetch would.
@@ -64,7 +78,8 @@ export class FakeRandomWalkDataSource extends DataSourceApi<FakeRandomWalkQuery>
 }
 
 function buildRandomWalkFrame(
-  target: FakeRandomWalkQuery,
+  refId: string,
+  name: string,
   from: number,
   to: number,
   stepMs: number,
@@ -80,15 +95,15 @@ function buildRandomWalkFrame(
   }
 
   return createDataFrame({
-    refId: target.refId,
-    name: target.alias ?? target.refId,
+    refId,
+    name,
     fields: [
       { name: 'Time', type: FieldType.time, values: times },
       {
         name: 'Value',
         type: FieldType.number,
         values,
-        config: { displayName: target.alias },
+        config: { displayName: name },
       },
     ],
   });

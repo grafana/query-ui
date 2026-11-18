@@ -1,13 +1,22 @@
 import { css } from '@emotion/css';
 import {
   type DataFrame,
+  type Field,
   FieldType,
+  getFieldDisplayName,
   type GrafanaTheme2,
   LoadingState,
   PanelPlugin,
   type PanelProps,
 } from '@grafana/data';
-import { useStyles2 } from '@grafana/ui';
+import {
+  commonOptionsBuilder,
+  type HideableFieldConfig,
+  LegendDisplayMode,
+  useStyles2,
+  VizLegend,
+  type VizLegendItem,
+} from '@grafana/ui';
 
 import { FAKE_TIMESERIES_PANEL_ID } from './constants';
 import { createFakePanelPluginMeta } from './pluginMeta';
@@ -38,26 +47,63 @@ function FakeTimeSeriesPanel({ data, width, height }: PanelProps) {
     return <div className={styles.message}>No data</div>;
   }
 
+  const series = getSeries(data.series);
+  const legendItems: VizLegendItem[] = series.map(({ name, field }) => ({
+    label: name,
+    fieldName: name,
+    yAxis: 1,
+    disabled: isHiddenFromViz(field),
+  }));
+
   return (
     <div className={styles.wrapper} style={{ width, height }}>
-      {data.series.map((frame, i) => (
-        <Sparkline key={frame.refId ?? i} frame={frame} />
-      ))}
+      <div className={styles.graph}>
+        {series
+          .filter(({ field }) => !isHiddenFromViz(field))
+          .map(({ name, field }) => (
+            <Sparkline key={name} name={name} field={field} />
+          ))}
+      </div>
+      {legendItems.length > 1 && (
+        <VizLegend
+          placement="bottom"
+          displayMode={LegendDisplayMode.List}
+          items={legendItems}
+        />
+      )}
     </div>
   );
 }
 
-function Sparkline({ frame }: { frame: DataFrame }) {
-  const styles = useStyles2(getStyles);
-  const valueField = frame.fields.find(
-    (field) => field.type === FieldType.number,
-  );
+interface Series {
+  name: string;
+  field: Field;
+}
 
-  if (!valueField || valueField.values.length === 0) {
+/** The first numeric field of each frame, named the way legends name it. */
+function getSeries(frames: DataFrame[]): Series[] {
+  return frames.flatMap((frame) => {
+    const field = frame.fields.find((f) => f.type === FieldType.number);
+    return field
+      ? [{ name: getFieldDisplayName(field, frame, frames), field }]
+      : [];
+  });
+}
+
+// Set by the series-visibility override VizPanel adds on a legend click.
+function isHiddenFromViz(field: Field<unknown>): boolean {
+  const custom = field.config.custom as HideableFieldConfig | undefined;
+  return custom?.hideFrom?.viz === true;
+}
+
+function Sparkline({ name, field }: Series) {
+  const styles = useStyles2(getStyles);
+
+  if (field.values.length === 0) {
     return null;
   }
 
-  const values = valueField.values as number[];
+  const values = field.values as number[];
   const min = Math.min(...values);
   const max = Math.max(...values);
   const span = max - min || 1;
@@ -71,10 +117,8 @@ function Sparkline({ frame }: { frame: DataFrame }) {
     .join(' ');
 
   return (
-    <div className={styles.series}>
-      <div className={styles.seriesName}>
-        {frame.name ?? frame.refId ?? 'series'}
-      </div>
+    <div className={styles.series} data-testid={`fake-series ${name}`}>
+      <div className={styles.seriesName}>{name}</div>
       <svg
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
@@ -96,8 +140,15 @@ const getStyles = (theme: GrafanaTheme2) => ({
   wrapper: css({
     display: 'flex',
     flexDirection: 'column',
-    padding: theme.spacing(1),
+    gap: theme.spacing(1),
     color: theme.colors.text.primary,
+  }),
+  graph: css({
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+    padding: theme.spacing(1),
   }),
   message: css({
     display: 'flex',
@@ -128,4 +179,10 @@ fakeTimeSeriesPanelPlugin.meta = createFakePanelPluginMeta(
   FAKE_TIMESERIES_PANEL_ID,
   'Fake time series',
 );
-fakeTimeSeriesPanelPlugin.useFieldConfig();
+// Registers custom.hideFrom, so applyFieldOverrides keeps the property the
+// legend's series-visibility override sets.
+fakeTimeSeriesPanelPlugin.useFieldConfig({
+  useCustomConfig: (builder) => {
+    commonOptionsBuilder.addHideFrom(builder);
+  },
+});

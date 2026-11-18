@@ -14,6 +14,7 @@ const scenarios: Scenario[] = [
   { path: '/single-panel-demo', label: 'Single panel demo' },
   { path: '/adhoc-filters-demo', label: 'Adhoc filters demo' },
   { path: '/slow-query-demo', label: 'Slow query demo' },
+  { path: '/many-series-demo', label: 'Many series demo' },
 ];
 
 export function HomePage() {
