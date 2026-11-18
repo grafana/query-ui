@@ -1,4 +1,11 @@
-import { useInterpolator, useDataQuery, VizPanel, VariableValueSelect, DataSourceVariable } from '@grafana/scenes2';
+import {
+  useInterpolator,
+  useDataQuery,
+  VizPanel,
+  VariableValueSelect,
+  DataSourceVariable,
+  GridPanelLayout,
+} from '@grafana/scenes2';
 import { Stack } from '@grafana/ui';
 import React from 'react';
 
@@ -9,27 +16,30 @@ export function SlowQueryDemo() {
   return (
     <PageWrapper title="Slow query demo">
       <DataSourceVariable name="ds" loading={true} pluginId="grafana-testdata-datasource">
-        <SlowQueryGraph />
+        <Stack direction="column" gap={3}>
+          <Stack justifyContent={'space-between'}>
+            <VariableValueSelect name="ds" />
+          </Stack>
+          <GridPanelLayout>
+            <SlowQueryGraph name="Latency" />
+            <SlowQueryGraph name="Errors" />
+          </GridPanelLayout>
+        </Stack>
       </DataSourceVariable>
     </PageWrapper>
   );
 }
 
-const SlowQueryGraph = React.memo(function SlowQueryGraph() {
+const SlowQueryGraph = React.memo(function SlowQueryGraph(props: { name: string }) {
   const [ds, loading] = useInterpolator('${ds}');
   const data = useDataQuery({
     enabled: !loading,
-    queries: [{ refId: 'A', datasource: { uid: ds }, scenarioId: 'slow_query', stringInput: '3s' }],
+    queries: [{ refId: 'A', datasource: { uid: ds }, scenarioId: 'slow_query', stringInput: '3s', alias: props.name }],
   });
 
   return (
-    <Stack direction="column" gap={3}>
-      <Stack justifyContent={'space-between'}>
-        <VariableValueSelect name="ds" />
-      </Stack>
-      <div style={{ height: 400 }}>
-        <VizPanel title="Slow query" vizConfig={plainTimeSeriesGraph} data={data.data} />
-      </div>
-    </Stack>
+    <div style={{ height: 400 }}>
+      <VizPanel title={props.name} vizConfig={plainTimeSeriesGraph} data={data.data} />
+    </div>
   );
 });

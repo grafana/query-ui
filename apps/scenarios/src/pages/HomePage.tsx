@@ -13,6 +13,7 @@ const scenarios: Scenario[] = [
   { path: '/lazy-grid-demo', label: 'Lazy grid demo' },
   { path: '/single-panel-demo', label: 'Single panel demo' },
   { path: '/adhoc-filters-demo', label: 'Adhoc filters demo' },
+  { path: '/slow-query-demo', label: 'Slow query demo' },
 ];
 
 export function HomePage() {

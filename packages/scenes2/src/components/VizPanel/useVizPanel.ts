@@ -1,3 +1,4 @@
+import { QueryClientContext } from '@tanstack/react-query';
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
   type AbsoluteTimeRange,
@@ -85,7 +86,20 @@ export function useVizPanel(props: VizPanelProps) {
   const isLoading =
     plugin === null || panelDataApplied.state === LoadingState.Loading;
 
+  // useDataQuery sets the request id to the query's hash, which finds the query
+  // in the cache. Data from anywhere else has no matching query, so the panel
+  // gets no cancel button. Optional: a panel can render without a QueryClient.
+  const queryClient = useContext(QueryClientContext);
+  const requestId = rawData?.request?.requestId;
+
+  const onCancelQuery = useCallback(() => {
+    void queryClient?.cancelQueries({
+      predicate: (query) => query.queryHash === requestId,
+    });
+  }, [queryClient, requestId]);
+
   return {
+    onCancelQuery,
     plugin,
     isLoading,
     fieldConfig: withDefaults.fieldConfig,

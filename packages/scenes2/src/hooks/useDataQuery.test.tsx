@@ -4,6 +4,7 @@ import React from 'react';
 import { Subject } from 'rxjs';
 import {
   type DataQuery,
+  type DataQueryRequest,
   type DataSourceApi,
   FieldType,
   getDefaultTimeRange,
@@ -13,6 +14,8 @@ import {
 } from '@grafana/data';
 import { getDataSourceSrv, getRunRequest } from '@grafana/runtime';
 
+import type { VizConfig } from '../components/VizPanel/PanelBuilders/types';
+import { useVizPanel } from '../components/VizPanel/useVizPanel';
 import { TimeRangeContextProvider } from '../time/TimeRangeContext';
 import { type DataQueryOptions, useDataQuery } from './useDataQuery';
 import { useTimeRange } from './useTimeRange';
@@ -22,7 +25,18 @@ vi.mock('@grafana/runtime', () => ({
   config: { bootData: { user: { timezone: 'browser' } } },
   getRunRequest: vi.fn(),
   getDataSourceSrv: vi.fn(),
+  // No panel plugin: the tests only need useVizPanel's cancel handler.
+  getPluginImportUtils: () => ({
+    getPanelPluginFromCache: () => undefined,
+    importPanelPlugin: () => new Promise(() => {}),
+  }),
 }));
+
+const vizConfig = {
+  pluginId: 'timeseries',
+  options: {},
+  fieldConfig: { defaults: {}, overrides: [] },
+} as unknown as VizConfig;
 
 const datasource = { uid: 'test-ds', interval: '1m' } as DataSourceApi;
 
@@ -32,6 +46,8 @@ const options: DataQueryOptions<DataQuery> = {
 
 /** One pending request per runRequest call, resolved by the test. */
 let requests: Array<Subject<PanelData>> = [];
+/** The DataQueryRequest of each runRequest call, by index. */
+let requestArgs: DataQueryRequest[] = [];
 
 function respond(index: number, value: number) {
   const request = requests[index];
@@ -43,6 +59,7 @@ function respond(index: number, value: number) {
       }),
     ],
     timeRange: getDefaultTimeRange(),
+    request: requestArgs[index],
   });
   request.complete();
 }
@@ -51,8 +68,10 @@ function seriesValue(data: PanelData | undefined) {
   return data?.series[0]?.fields[0]?.values[0];
 }
 
+let queryClient: QueryClient;
+
 function renderDataQuery() {
-  const queryClient = new QueryClient({
+  queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
 
@@ -63,7 +82,11 @@ function renderDataQuery() {
   );
 
   return renderHook(
-    () => ({ query: useDataQuery(options), timeRange: useTimeRange() }),
+    () => {
+      const query = useDataQuery(options);
+      const panel = useVizPanel({ vizConfig, data: query.data });
+      return { query, panel, timeRange: useTimeRange() };
+    },
     { wrapper },
   );
 }
@@ -76,7 +99,9 @@ describe('useDataQuery', () => {
     vi.setSystemTime(new Date('2026-01-01T12:00:00Z'));
 
     requests = [];
-    vi.mocked(getRunRequest).mockReturnValue(() => {
+    requestArgs = [];
+    vi.mocked(getRunRequest).mockReturnValue((_ds, args) => {
+      requestArgs.push(args);
       const request = new Subject<PanelData>();
       requests.push(request);
       return request.asObservable();
@@ -121,5 +146,57 @@ describe('useDataQuery', () => {
     );
 
     expect(seriesValue(result.current.query.data)).toBe(2);
+  });
+
+  it('uses the query hash as the request id', async () => {
+    renderDataQuery();
+
+    await waitFor(() => expect(requests).toHaveLength(1));
+
+    expect(requestArgs[0].requestId).toMatch(/^\["data",/);
+  });
+
+  it('the panel cancel aborts a refresh and keeps the previous data', async () => {
+    const { result } = renderDataQuery();
+
+    await waitFor(() => expect(requests).toHaveLength(1));
+    act(() => respond(0, 1));
+    await waitFor(() =>
+      expect(result.current.query.data?.state).toBe(LoadingState.Done),
+    );
+
+    vi.setSystemTime(new Date('2026-01-01T12:02:00Z'));
+    act(() => result.current.timeRange.onRefresh());
+    await waitFor(() => expect(requests).toHaveLength(2));
+
+    // The previous data stands in, but its request id points at the new query.
+    expect(result.current.query.data?.request?.requestId).toBe(
+      requestArgs[1].requestId,
+    );
+    expect(requests[1].observed).toBe(true);
+
+    act(() => result.current.panel.onCancelQuery?.());
+
+    await waitFor(() => expect(result.current.query.isFetching).toBe(false));
+    expect(requests[1].observed).toBe(false);
+    expect(result.current.query.data?.state).toBe(LoadingState.Done);
+    expect(seriesValue(result.current.query.data)).toBe(1);
+  });
+
+  it('resolves to an empty result when canceled before any data', async () => {
+    const { result } = renderDataQuery();
+
+    await waitFor(() => expect(requests).toHaveLength(1));
+    expect(result.current.query.data).toBeUndefined();
+
+    act(() => {
+      void queryClient.cancelQueries({ queryKey: ['data'] });
+    });
+
+    await waitFor(() =>
+      expect(result.current.query.data?.state).toBe(LoadingState.Done),
+    );
+    expect(requests[0].observed).toBe(false);
+    expect(result.current.query.data?.series).toEqual([]);
   });
 });

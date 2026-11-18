@@ -1,11 +1,12 @@
 import {
+  hashKey,
   keepPreviousData,
   useQuery,
   type UseQueryOptions,
   type UseQueryResult,
 } from '@tanstack/react-query';
-import { useContext, useId, useMemo } from 'react';
-import { lastValueFrom } from 'rxjs';
+import { useContext, useMemo } from 'react';
+import { fromEvent, lastValueFrom, takeUntil } from 'rxjs';
 import {
   LoadingState,
   rangeUtil,
@@ -13,17 +14,12 @@ import {
   type DataQueryRequest,
   type DataSourceRef,
   type PanelData,
+  type TimeRange,
 } from '@grafana/data';
 import { getDataSourceSrv, getRunRequest } from '@grafana/runtime';
 
 import { AdhocFiltersContext } from '../filters/AdhocFiltersContext';
 import { useTimeRange } from './useTimeRange';
-
-// import { hasCustomVariableSupport } from './Components/variables/query/guards';
-// import { useInterpolatableVariablesResolved } from './hooks/variables/useInterpolatableVariablesResolved';
-// import { useVariableInterpolator } from './hooks/variables/useVariableInterpolator';
-// import { useVariables } from './hooks/variables/useVariables';
-// import { variablesToScopedVars } from './utils/variables';
 
 export interface DataQueryOptions<T extends DataQuery> {
   enabled?: boolean;
@@ -33,10 +29,15 @@ export interface DataQueryOptions<T extends DataQuery> {
   minInterval?: string;
 }
 
+/**
+ * First element of every data query key. Use it to select all data queries, for
+ * example `queryClient.cancelQueries({ queryKey: [dataQueryKey] })`.
+ */
+export const dataQueryKey = 'data';
+
 export function useDataQuery<T extends DataQuery>(
   options: DataQueryOptions<T>,
 ): UseQueryResult<PanelData, Error> {
-  const requestId = useId();
   const runRequest = getRunRequest();
   const dataSourceSrv = getDataSourceSrv();
   const timeRangeCtx = useTimeRange();
@@ -56,18 +57,24 @@ export function useDataQuery<T extends DataQuery>(
   const timeRangeKey = `${timeRange.from.valueOf()}-${timeRange.to.valueOf()}`;
   const queries = options.queries;
   const maxDataPoints = options.maxDataPoints ?? 500;
-  const queryKey = ['data', queries, timeRangeKey, filters];
+  const queryKey = [dataQueryKey, queries, timeRangeKey, filters];
+  const enabled = dsQuery.data != null && options.enabled !== false;
+  // The request carries the query's hash as its id, so anything holding the
+  // resulting PanelData (like VizPanel) can find the query and cancel it.
+  const requestId = hashKey(queryKey);
 
   const queryOptions: UseQueryOptions<PanelData> = {
-    enabled: dsQuery.data != null && options.enabled !== false,
+    enabled,
     staleTime: staleTime,
     queryKey: queryKey,
     // A refresh or a time range change gives the query a new key. Keep showing
     // the previous result until the new one arrives instead of clearing it.
     placeholderData: keepPreviousData,
-    queryFn: () => {
+    // Reading `signal` opts the query in to cancellation: react-query aborts it
+    // when the query is canceled or loses its last observer.
+    queryFn: ({ signal }) => {
       const request: DataQueryRequest = {
-        requestId: requestId + `-${Date.now()}`,
+        requestId,
         targets: queries,
         app: 'demo-app',
         range: timeRange,
@@ -106,28 +113,51 @@ export function useDataQuery<T extends DataQuery>(
 
       const obs = runRequest(dsQuery.data!, request);
 
-      return lastValueFrom(obs);
+      // Unsubscribing on abort is what cancels the datasource request. Without
+      // it react-query drops the result, but the request keeps running.
+      return lastValueFrom(obs.pipe(takeUntil(fromEvent(signal, 'abort'))));
     },
   };
 
   const result = useQuery<PanelData, Error>(queryOptions);
-  const { data, isFetching } = result;
+  const { data, isFetching, status, fetchStatus } = result;
 
-  // The previous result keeps its Done state while it stands in for the new
-  // query. Mark it as loading so panels show that a query is running.
-  const dataWithState = useMemo(
-    () =>
-      data && isFetching && data.state !== LoadingState.Loading
-        ? { ...data, state: LoadingState.Loading }
-        : data,
-    [data, isFetching],
-  );
+  // An enabled query that is pending and idle was canceled before it had any
+  // data. Without data the panel would show its loading state forever.
+  const isCanceled = enabled && status === 'pending' && fetchStatus === 'idle';
+
+  const dataWithState = useMemo(() => {
+    if (!data) {
+      return isCanceled ? emptyData(timeRange) : data;
+    }
+
+    if (
+      !isFetching ||
+      (data.state === LoadingState.Loading &&
+        data.request?.requestId === requestId)
+    ) {
+      return data;
+    }
+
+    // The previous result stands in for the new query while it runs. Mark it
+    // as loading so panels show that a query is running, and point its request
+    // id at the running query so canceling from the panel reaches it.
+    return {
+      ...data,
+      state: LoadingState.Loading,
+      request: data.request && { ...data.request, requestId },
+    };
+  }, [data, isFetching, isCanceled, timeRange, requestId]);
 
   if (dataWithState === data) {
     return result;
   }
 
   return { ...result, data: dataWithState } as UseQueryResult<PanelData, Error>;
+}
+
+function emptyData(timeRange: TimeRange): PanelData {
+  return { state: LoadingState.Done, series: [], timeRange };
 }
 
 export function findFirstDatasource(

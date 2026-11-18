@@ -7,6 +7,7 @@ import { HomePage } from './pages/HomePage';
 import { LazyGridDemoPage } from './pages/LazyGridDemoPage';
 import { PanelGridLayoutDemoPage } from './pages/PanelGridLayoutDemoPage';
 import { SinglePanelDemoPage } from './pages/SinglePanelDemoPage';
+import { SlowQueryDemoPage } from './pages/SlowQueryDemoPage';
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ export function App() {
                 path="/adhoc-filters-demo"
                 element={<AdhocFiltersDemoPage />}
               />
+              <Route path="/slow-query-demo" element={<SlowQueryDemoPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </TimeRangeContextProvider>
