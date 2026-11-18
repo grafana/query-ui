@@ -23,6 +23,7 @@ export function VizPanel(props: VizPanelProps) {
     panelOptions,
     panelData,
     onChangeTimeRange,
+    onCancelQuery,
   } = useVizPanel(props);
   const [ref, { width, height }] = useMeasure<HTMLDivElement>();
 
@@ -36,6 +37,7 @@ export function VizPanel(props: VizPanelProps) {
             height={height}
             loadingState={isLoading ? LoadingState.Loading : undefined}
             actions={props.actions}
+            onCancelQuery={onCancelQuery}
           >
             {(innerWidth, innerHeight) => (
               <>
