@@ -50,6 +50,9 @@ registers fakes for the same three services, and `src/main.tsx` calls
   `DataSourceApi` and synthesizes a random-walk series in the browser —
   no backend, no `/api/ds/query` call. It stands in for the testdata
   datasource's `random_walk` scenario that `apps/demo-app` queries against.
+  A query's `delayMs` holds the response back to stand in for a slow query;
+  unsubscribing before then cancels it. `fakeQueryStats.ts` counts how each
+  query ended, which `/slow-query-demo` shows and its e2e test reads.
 - `runFakeRequest` (`fakeRunRequest.ts`) stands in for
   `public/app/features/query/state/runRequest.ts`: it calls the datasource
   and turns the response into `PanelData`, skipping the mixed-datasource and

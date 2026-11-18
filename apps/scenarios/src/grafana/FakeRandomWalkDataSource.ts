@@ -1,3 +1,4 @@
+import { map, type Observable, of, timer } from 'rxjs';
 import {
   createDataFrame,
   type DataFrame,
@@ -10,8 +11,16 @@ import {
   type TestDataSourceResponse,
 } from '@grafana/data';
 
+import { trackQuery } from './fakeQueryStats';
+
 export interface FakeRandomWalkQuery extends DataQuery {
   alias?: string;
+  /**
+   * Holds the response back this long, in milliseconds, to stand in for a slow
+   * query. Unsubscribing before then cancels it. A request waits for its
+   * slowest query.
+   */
+  delayMs?: number;
 }
 
 /**
@@ -25,19 +34,25 @@ export class FakeRandomWalkDataSource extends DataSourceApi<FakeRandomWalkQuery>
     super(instanceSettings);
   }
 
-  async query(
+  query(
     request: DataQueryRequest<FakeRandomWalkQuery>,
-  ): Promise<DataQueryResponse> {
+  ): Observable<DataQueryResponse> {
     const { range, targets, maxDataPoints = 100 } = request;
     const from = range.from.valueOf();
     const to = range.to.valueOf();
     const stepMs = Math.max(1000, Math.floor((to - from) / maxDataPoints));
+    const delayMs = Math.max(0, ...targets.map((t) => t.delayMs ?? 0));
 
-    return {
+    const response = (): DataQueryResponse => ({
       data: targets.map((target) =>
         buildRandomWalkFrame(target, from, to, stepMs),
       ),
-    };
+    });
+
+    // A timer stops when it is unsubscribed, the way a canceled fetch would.
+    const source = delayMs > 0 ? timer(delayMs) : of(0);
+
+    return trackQuery(source.pipe(map(response)));
   }
 
   async testDatasource(): Promise<TestDataSourceResponse> {
