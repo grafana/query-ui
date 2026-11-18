@@ -10,10 +10,12 @@ import {
   getPanelOptionsWithDefaults,
   LoadingState,
   type PanelPlugin,
+  renderMarkdown,
 } from '@grafana/data';
 import { config, getPluginImportUtils } from '@grafana/runtime';
 
 import { TimeRangeContext } from '../../time/TimeRangeContext';
+import { useInterpolator } from '../../variables/interpolation/useInterpolator';
 import type { VizConfig } from './PanelBuilders/types';
 import type { VizPanelProps } from './VizPanel';
 
@@ -33,6 +35,15 @@ type PanelOptions = Record<string, unknown>;
 export function useVizPanel(props: VizPanelProps) {
   const { data: rawData, vizConfig } = props;
   const plugin = usePanelPlugin(vizConfig.pluginId);
+  const [title] = useInterpolator(props.title ?? '');
+  const [description] = useInterpolator(props.description ?? '');
+
+  // PanelChrome calls this only when the description tooltip opens, so the
+  // markdown is not rendered for panels whose description nobody reads.
+  const getDescription = useCallback(
+    () => renderMarkdown(description),
+    [description],
+  );
 
   const [transient, setTransient] = useState<TransientConfig>(() => ({
     vizConfig,
@@ -164,6 +175,9 @@ export function useVizPanel(props: VizPanelProps) {
   }, [queryClient, requestId]);
 
   return {
+    title,
+    getDescription:
+      props.description !== undefined ? getDescription : undefined,
     onCancelQuery,
     plugin,
     isLoading,
