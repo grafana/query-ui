@@ -10,11 +10,15 @@ import { t } from '@grafana/i18n';
 import { type VariableType, VariableFormatID } from '@grafana/schema';
 
 import { ALL_VARIABLE_VALUE } from '../constants';
-import type { VariableValue } from '../types';
+
+export type VariableValueSingle = string | number | boolean;
+
+/** A variable value as the formatters see it: one value, or several for a multi-value variable. */
+export type FormatValue = VariableValueSingle | VariableValueSingle[];
 
 export interface FormatRegistryItem extends RegistryItem {
   formatter(
-    value: VariableValue | VariableValue[],
+    value: FormatValue,
     args: string[],
     variable: FormatVariable,
     fieldPath?: string,
@@ -28,11 +32,11 @@ export interface FormatRegistryItem extends RegistryItem {
  */
 export interface FormatVariable {
   name: string;
-  type: VariableType;
+  type?: VariableType;
   isMulti?: boolean;
   includeAll?: boolean;
 
-  getValue(fieldPath?: string): VariableValue | undefined | null;
+  getValue(fieldPath?: string): unknown;
 }
 
 export const formatRegistry = new Registry<FormatRegistryItem>(() => {
@@ -206,12 +210,10 @@ export const formatRegistry = new Registry<FormatRegistryItem>(() => {
       formatter: (value) => {
         // like glob, but url escaped
         if (isArray(value)) {
-          return encodeURIComponentStrict(
-            '{' + value.map((v) => String(v.value)).join(',') + '}',
-          );
+          return encodeURIComponentStrict('{' + value.join(',') + '}');
         }
 
-        return encodeURIComponentStrict(String(value.value));
+        return encodeURIComponentStrict(String(value));
       },
     },
     {
@@ -334,31 +336,35 @@ export const formatRegistry = new Registry<FormatRegistryItem>(() => {
       name: 'Text',
       description:
         'Format variables in their text representation. Example in multi-variable scenario A + B + C.',
-      formatter: (_, _args, variable, _2) => {
-        return String(variable.getValue('text'));
+      formatter: (value, _args, variable, fieldPath) => {
+        // A field path picks a field of the value itself, so there is no separate text for it
+        if (!fieldPath) {
+          const text = variable.getValue('text');
+
+          if (text !== undefined && text !== null) {
+            return isArray(text) ? text.join(' + ') : String(text);
+          }
+        }
+
+        return isArray(value) ? value.join(' + ') : String(value);
       },
     },
-    // TODO
-    // {
-    //   id: VariableFormatID.QueryParam,
-    //   name: 'Query parameter',
-    //   description:
-    //     'Format variables as URL parameters. Example in multi-variable scenario A + B + C => var-foo=A&var-foo=B&var-foo=C.',
-    //   formatter: (value, _args, variable, fieldPath) => {
-    //     if (variable.urlSync && !fieldPath) {
-    //       const urlParam = variable.urlSync.getUrlState();
-    //       return urlUtil.toUrlParams(urlParam);
-    //     }
+    {
+      id: VariableFormatID.QueryParam,
+      name: 'Query parameter',
+      description:
+        'Format variables as URL parameters. Example in multi-variable scenario A + B + C => var-foo=A&var-foo=B&var-foo=C.',
+      // TODO: let a variable with its own url sync (like ad hoc filters) render its url state instead
+      formatter: (value, _args, variable) => {
+        if (Array.isArray(value)) {
+          return value
+            .map((v) => formatQueryParameter(variable.name, v))
+            .join('&');
+        }
 
-    //     if (Array.isArray(value)) {
-    //       return value
-    //         .map((v) => formatQueryParameter(variable.state.name, v))
-    //         .join('&');
-    //     }
-
-    //     return formatQueryParameter(variable.state.name, value);
-    //   },
-    // },
+        return formatQueryParameter(variable.name, value);
+      },
+    },
     {
       id: 'customqueryparam',
       name: 'Custom query parameter',
@@ -371,16 +377,12 @@ export const formatRegistry = new Registry<FormatRegistryItem>(() => {
         if (Array.isArray(value)) {
           return value
             .map((v) =>
-              customFormatQueryParameter(name, String(v.value), valuePrefix),
+              customFormatQueryParameter(name, String(v), valuePrefix),
             )
             .join('&');
         }
 
-        return customFormatQueryParameter(
-          name,
-          String(value.value),
-          valuePrefix,
-        );
+        return customFormatQueryParameter(name, String(value), valuePrefix);
       },
     },
     {
@@ -390,14 +392,12 @@ export const formatRegistry = new Registry<FormatRegistryItem>(() => {
         'grafana-scenes.variables.format-registry.formats.description.useful-escaping-values-taking-syntax-characters',
         'Useful for URL escaping values, taking into URI syntax characters',
       ),
-      formatter: (value: VariableValue) => {
+      formatter: (value) => {
         if (isArray(value)) {
-          return encodeURIStrict(
-            '{' + value.map((v) => String(v.value)).join(',') + '}',
-          );
+          return encodeURIStrict('{' + value.join(',') + '}');
         }
 
-        return encodeURIStrict(String(value.value));
+        return encodeURIStrict(String(value));
       },
     },
   ];
@@ -434,12 +434,12 @@ const replaceSpecialCharactersToASCII = (value: string): string =>
     return '%' + c.charCodeAt(0).toString(16).toUpperCase();
   });
 
-// function formatQueryParameter(
-//   name: string,
-//   value: VariableValue,
-// ): string {
-//   return `var-${name}=${encodeURIComponentStrict(value)}`;
-// }
+function formatQueryParameter(
+  name: string,
+  value: VariableValueSingle,
+): string {
+  return `var-${name}=${encodeURIComponentStrict(String(value))}`;
+}
 
 function customFormatQueryParameter(
   name: string,
@@ -449,9 +449,9 @@ function customFormatQueryParameter(
   return `${name}=${valuePrefix}${encodeURIComponentStrict(value)}`;
 }
 
-export function isAllValue(value: VariableValue) {
+export function isAllValue(value: FormatValue) {
   return (
-    value.value === ALL_VARIABLE_VALUE ||
+    value === ALL_VARIABLE_VALUE ||
     (Array.isArray(value) && value[0] === ALL_VARIABLE_VALUE)
   );
 }
@@ -461,7 +461,7 @@ const SQL_ESCAPE_MAP: Record<string, string> = {
   '"': '\\"',
 };
 
-function sqlStringFormatter(value: VariableValue) {
+function sqlStringFormatter(value: FormatValue) {
   // escape single quotes by pairing them
   const regExp = new RegExp(`'|"`, 'g');
 

@@ -3,36 +3,43 @@ import type { ScopedVars } from '@grafana/data';
 import { VariableFormatID } from '@grafana/schema';
 
 import { VARIABLE_REGEX } from '../constants';
+import { macrosIndex } from '../macros';
 import {
   VariableContext,
-  type VariableValue,
   type InterpolationFormatParameter,
   type VariableContextState,
 } from '../types';
-import { formatRegistry, type FormatVariable } from './formatRegistry';
+import {
+  formatRegistry,
+  type FormatValue,
+  type FormatVariable,
+} from './formatRegistry';
 
+/**
+ * Replaces the variable expressions in `input` (`$var`, `[[var]]`, `${var}`,
+ * `${var.field}` and `${var:format}`) with the values of the closest variables.
+ * `format` applies to the expressions that don't name a format of their own.
+ *
+ * Returns the interpolated string, and whether any of the variables it used is
+ * still loading.
+ */
 export function useInterpolator(
   input: string,
-  _scopedVars?: ScopedVars,
-  _format?: InterpolationFormatParameter,
+  scopedVars?: ScopedVars,
+  format?: InterpolationFormatParameter,
 ): [string, boolean] {
   const context = React.useContext(VariableContext);
 
-  if (!context) {
-    return [input, false];
-  }
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   return React.useMemo(() => {
-    return interpolate(input, context);
-  }, [input, context]);
+    return interpolate(input, context, scopedVars, format);
+  }, [input, context, scopedVars, format]);
 }
 
 function interpolate(
   target: string,
-  context: VariableContextState<unknown>,
+  context: VariableContextState<unknown> | undefined,
   scopedVars?: ScopedVars,
-  _format?: InterpolationFormatParameter,
+  format?: InterpolationFormatParameter,
 ): [string, boolean] {
   VARIABLE_REGEX.lastIndex = 0;
 
@@ -40,20 +47,34 @@ function interpolate(
 
   const result = target.replace(
     VARIABLE_REGEX,
-    (match, var1, var2, _fmt2, var3, fieldPath, _fmt3) => {
+    (match, var1, var2, fmt2, var3, fieldPath, fmt3) => {
       const variableName = var1 || var2 || var3;
-      //const fmt = fmt2 || fmt3 || format;
-      const variable = lookupVariable(variableName, match, scopedVars, context);
+      const fmt = fmt2 || fmt3 || format;
+      const variable = lookupVariable(variableName, context);
 
-      if (!variable) {
-        return match;
+      if (variable) {
+        if (variable.loading) {
+          loading = true;
+        }
+
+        return formatValue(
+          variable,
+          variable.getValue(fieldPath),
+          fmt,
+          fieldPath,
+        );
       }
 
-      if (variable.loading) {
-        loading = true;
+      if (macrosIndex.get(variableName)) {
+        const macro = macrosIndex.get(variableName)!(
+          variableName,
+          match,
+          scopedVars,
+        );
+        return formatValue(macro, macro.getValue(fieldPath), fmt, fieldPath);
       }
 
-      return String(variable.getValue(fieldPath) || '');
+      return match;
     },
   );
 
@@ -62,10 +83,8 @@ function interpolate(
 
 function lookupVariable(
   name: string,
-  _match: string,
-  _scopedVars: ScopedVars | undefined,
-  context: VariableContextState<unknown>,
-): VariableContextState<unknown> | undefined {
+  context: VariableContextState<unknown> | undefined,
+): VariableContextState | undefined {
   let current: VariableContextState<unknown> | undefined = context;
 
   while (current) {
@@ -80,24 +99,22 @@ function lookupVariable(
 
 function formatValue(
   variable: FormatVariable,
-  value: VariableValue | null | undefined,
+  rawValue: unknown,
   formatNameOrFn?: InterpolationFormatParameter,
   fieldPath?: string,
 ): string {
-  if (value === null || value === undefined) {
+  if (rawValue === null || rawValue === undefined) {
     return '';
   }
 
-  // Variable can return a custom value that handles formatting
-  // This is useful for customAllValue and macros that return values that are already formatted or need special formatting
-  // if (isCustomVariableValue(value)) {
-  //   return sceneInterpolator(context, value.formatter(formatNameOrFn));
-  // }
+  // TODO: let a variable return a custom value that does its own formatting,
+  // like the old scenes CustomVariableValue (used for customAllValue and macros)
 
-  // if it's an object transform value to string
-  // if (!Array.isArray(value) && typeof value === 'object') {
-  //   value = `${value}`;
-  // }
+  // Formatters only handle primitives and arrays, so an object becomes a string
+  const value: FormatValue =
+    !Array.isArray(rawValue) && typeof rawValue === 'object'
+      ? `${rawValue}`
+      : (rawValue as FormatValue);
 
   if (typeof formatNameOrFn === 'function') {
     return formatNameOrFn(value, {
