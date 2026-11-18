@@ -1,4 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import {
   createTheme,
   getDefaultTimeRange,
@@ -8,6 +9,7 @@ import {
 } from '@grafana/data';
 import { getPluginImportUtils } from '@grafana/runtime';
 
+import { DefineVariable } from '../../variables/DefineVariable';
 import type { VizConfig } from './PanelBuilders/types';
 import { useVizPanel } from './useVizPanel';
 
@@ -165,5 +167,45 @@ describe('useVizPanel onFieldConfigChange', () => {
     rerender({ vizConfig: makeVizConfig('percent') });
 
     expect(result.current.fieldConfig.defaults.unit).toBe('percent');
+  });
+});
+
+describe('useVizPanel title and description', () => {
+  beforeEach(() => {
+    mockPlugin(new PanelPlugin(() => null));
+  });
+
+  function wrapper({ children }: { children: ReactNode }) {
+    return (
+      <DefineVariable name="env" value={{ value: 'prod', label: 'Prod' }}>
+        {children}
+      </DefineVariable>
+    );
+  }
+
+  it('interpolates variables in the title', () => {
+    const { result } = renderHook(
+      () => useVizPanel({ vizConfig, title: 'Requests in $env' }),
+      { wrapper },
+    );
+
+    expect(result.current.title).toBe('Requests in prod');
+  });
+
+  it('renders the description as markdown with variables interpolated', () => {
+    const { result } = renderHook(
+      () => useVizPanel({ vizConfig, description: '**Env** is ${env}' }),
+      { wrapper },
+    );
+
+    expect(result.current.getDescription?.()).toBe(
+      '<p><strong>Env</strong> is prod</p>\n',
+    );
+  });
+
+  it('returns no description getter when no description is set', () => {
+    const { result } = renderHook(() => useVizPanel({ vizConfig }));
+
+    expect(result.current.getDescription).toBeUndefined();
   });
 });

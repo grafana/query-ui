@@ -9,7 +9,13 @@ import { usePanelContextState } from './usePanelContextState';
 import { useVizPanel } from './useVizPanel';
 
 export interface VizPanelProps {
+  /** Panel title. Variables like `$var` are interpolated. */
   title?: string;
+  /**
+   * Shown in a tooltip from the info icon in the panel header. Supports
+   * markdown, and variables like `$var` are interpolated.
+   */
+  description?: string;
   vizConfig: VizConfig;
   data?: PanelData;
   /** Rendered in the panel header, for example buttons. */
@@ -18,6 +24,8 @@ export interface VizPanelProps {
 
 export function VizPanel(props: VizPanelProps) {
   const {
+    title,
+    getDescription,
     plugin,
     isLoading,
     fieldConfig,
@@ -43,7 +51,8 @@ export function VizPanel(props: VizPanelProps) {
         {width > 0 && height > 0 && (
           <PanelContextProvider value={panelContext}>
             <PanelChrome
-              title={props.title ?? ''}
+              title={title}
+              description={getDescription}
               width={width}
               height={height}
               loadingState={isLoading ? LoadingState.Loading : undefined}
@@ -55,7 +64,7 @@ export function VizPanel(props: VizPanelProps) {
                   {plugin?.panel && (
                     <plugin.panel
                       id={1}
-                      title={props.title ?? ''}
+                      title={title}
                       options={panelOptions}
                       data={panelData}
                       timeZone={'browser'}
