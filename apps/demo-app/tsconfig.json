@@ -15,11 +15,11 @@
     "importHelpers": false,
     "noEmitHelpers": false,
     // Resolve the workspace package to its source so editor go-to-definition
-    // lands in packages/scenes2/src instead of the bundled dist/*.d.ts.
+    // lands in packages/query-ui/src instead of the bundled dist/*.d.ts.
     // Re-declares the scaffolded "*" mapping because `paths` replaces the
     // inherited object rather than merging into it.
     "paths": {
-      "@grafana/scenes2": ["../../packages/scenes2/src/index.ts"],
+      "@grafana/query-ui": ["../../packages/query-ui/src/index.ts"],
       "*": ["./src/*"]
     }
   }

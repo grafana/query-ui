@@ -1,4 +1,4 @@
-import { useDataQuery, VizPanel } from '@grafana/scenes2';
+import { useDataQuery, VizPanel } from '@grafana/query-ui';
 
 import { PageWrapper } from './PageWrapper';
 import { plainTimeSeriesGraph } from './sharedVisualizations';

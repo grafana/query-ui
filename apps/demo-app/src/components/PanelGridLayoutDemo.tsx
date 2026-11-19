@@ -1,4 +1,4 @@
-import { GridPanelLayout, useDataQuery, VizConfigBuilders, VizPanel } from '@grafana/scenes2';
+import { GridPanelLayout, useDataQuery, VizConfigBuilders, VizPanel } from '@grafana/query-ui';
 
 import { PageWrapper } from './PageWrapper';
 

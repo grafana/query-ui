@@ -1,5 +1,5 @@
 {
-  "name": "@grafana/scenes2",
+  "name": "@grafana/query-ui",
   "version": "0.0.0",
   "private": false,
   "description": "Grafana scenes v2",
@@ -90,8 +90,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/torkelo/scenes2.git",
-    "directory": "packages/scenes2"
+    "url": "https://github.com/torkelo/query-ui.git",
+    "directory": "packages/query-ui"
   },
   "publishConfig": {
     "access": "public",

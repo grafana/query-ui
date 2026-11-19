@@ -1,4 +1,4 @@
-import { GridPanelLayout, useInterpolator, useVariableOptionsQuery, VizPanel } from '@grafana/scenes2';
+import { GridPanelLayout, useInterpolator, useVariableOptionsQuery, VizPanel } from '@grafana/query-ui';
 import { Icon, Input, LinkButton, RadioButtonGroup, Stack } from '@grafana/ui';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';

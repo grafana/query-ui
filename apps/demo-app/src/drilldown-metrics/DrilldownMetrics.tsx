@@ -9,7 +9,7 @@ import {
   AdhocFiltersVariable,
   TimeRangeContextPicker,
   TimeRangeRefresh,
-} from '@grafana/scenes2';
+} from '@grafana/query-ui';
 import { Box, Field, Stack } from '@grafana/ui';
 
 import { MetricScene } from './MetricScene';

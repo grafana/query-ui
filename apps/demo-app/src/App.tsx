@@ -1,6 +1,6 @@
 import { Route, Routes } from 'react-router-dom';
 import { AppRootProps } from '@grafana/data';
-import { TimeRangeContextProvider, UrlStateProvider } from '@grafana/scenes2';
+import { TimeRangeContextProvider, UrlStateProvider } from '@grafana/query-ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PluginPropsContext } from './utils/utils.plugin';
 import { DemoHome } from 'components/DemoHome';

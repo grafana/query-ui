@@ -1,6 +1,6 @@
 # @grafana/scenarios
 
-Standalone web app for building scenarios on top of `@grafana/scenes2`. Vite +
+Standalone web app for building scenarios on top of `@grafana/query-ui`. Vite +
 React 19, routed with react-router 6, styled through the Grafana theme from
 `@grafana/ui`.
 
@@ -24,7 +24,7 @@ pnpm --filter @grafana/scenarios exec playwright install chromium
 
 ## How it fits together
 
-`vite.config.ts` aliases `@grafana/scenes2` to `packages/scenes2/src/index.ts`,
+`vite.config.ts` aliases `@grafana/query-ui` to `packages/query-ui/src/index.ts`,
 so editing the workspace package hot-reloads here instead of needing a rebuild.
 Type-checking still resolves the package through its built `dist/` types, which
 turbo builds first — that keeps the app honest about the package's public API.
@@ -37,7 +37,7 @@ seed to switch between `dark` and `light`.
 
 ### Faking @grafana/runtime services
 
-`VizPanel` and `useDataQuery` (both from `@grafana/scenes2`) don't call a
+`VizPanel` and `useDataQuery` (both from `@grafana/query-ui`) don't call a
 backend directly — they read `getDataSourceSrv()`, `getRunRequest()` and
 `getPluginImportUtils()` off `@grafana/runtime`. In a real Grafana instance
 those are registered once, on boot, by `GrafanaApp.init()` in

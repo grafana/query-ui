@@ -1,4 +1,4 @@
-import { useDataQuery, VizConfigBuilder, VizPanel } from '@grafana/scenes2';
+import { useDataQuery, VizConfigBuilder, VizPanel } from '@grafana/query-ui';
 
 import {
   FAKE_RANDOM_WALK_DATASOURCE_UID,

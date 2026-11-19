@@ -1,5 +1,5 @@
 import { PluginPage } from '@grafana/runtime';
-import { TimeRangeContextPicker, TimeRangeRefresh } from '@grafana/scenes2';
+import { TimeRangeContextPicker, TimeRangeRefresh } from '@grafana/query-ui';
 import { PLUGIN_BASE_URL } from 'constants';
 import React from 'react';
 

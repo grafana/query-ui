@@ -1,4 +1,4 @@
-import { useInterpolator, useDataQuery, VizPanel, VariableValueSelect, DataSourceVariable } from '@grafana/scenes2';
+import { useInterpolator, useDataQuery, VizPanel, VariableValueSelect, DataSourceVariable } from '@grafana/query-ui';
 import { Stack } from '@grafana/ui';
 import React from 'react';
 
