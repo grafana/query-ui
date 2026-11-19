@@ -52,6 +52,6 @@ export type InterpolationFormatParameter =
   string | VariableCustomFormatterFn | undefined;
 
 export interface QueryUIScopedVars extends ScopedVars {
-  __timeRange: { value: TimeRange };
-  __location: { value: Location };
+  __timeRange?: { value: TimeRange };
+  __location?: { value: Location };
 }
