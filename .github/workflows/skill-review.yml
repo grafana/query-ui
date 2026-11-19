@@ -251,7 +251,7 @@ jobs:
 
       - name: Run skill review
         if: steps.diff.outputs.count != '0'
-        uses: anthropics/claude-code-action@459ad358ae43fea66bfefd0a1f8d840b4b9791fb # v1.0.194
+        uses: anthropics/claude-code-action@f3b070c88125d33dbae5653df5f143101d4ea9dc # v1.0.276
         with:
           anthropic_api_key: ${{ fromJSON(steps.secrets.outputs.secrets).ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
