@@ -1,11 +1,10 @@
-import type { ScopedVars } from '@grafana/data';
-
 import type { FormatVariable } from '../interpolation/formatRegistry';
+import type { QueryUIScopedVars } from '../types';
 
 export interface MacroHandler {
   (
     name: string,
     match: string,
-    scopedVars: ScopedVars | undefined,
+    scopedVars: QueryUIScopedVars | undefined,
   ): FormatVariable;
 }

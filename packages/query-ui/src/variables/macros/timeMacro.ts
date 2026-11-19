@@ -1,16 +1,15 @@
-import type { ScopedVars, TimeRange } from '@grafana/data';
-
 import type { FormatVariable } from '../interpolation/formatRegistry';
+import type { QueryUIScopedVars } from '../types';
 
 export function fromToMacro(
   name: string,
   _match: string,
-  scopedVars: ScopedVars | undefined,
+  scopedVars: QueryUIScopedVars | undefined,
 ): FormatVariable {
   return {
     name: name,
     getValue: () => {
-      const timeRange = scopedVars?.__timeRange?.value as TimeRange;
+      const timeRange = scopedVars?.__timeRange?.value;
 
       if (!timeRange) {
         return undefined;

@@ -139,6 +139,20 @@ export default defineConfig(
       },
     },
   },
+  // CommonJS config files (e.g. the i18next-parser config) use `module.exports`.
+  {
+    files: ['**/*.cjs'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: {
+        module: 'writable',
+        require: 'readonly',
+        __dirname: 'readonly',
+        process: 'readonly',
+        console: 'readonly',
+      },
+    },
+  },
   {
     ignores: [
       '**/node_modules/**',

@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 
-import { useVariable } from '../hooks/useVariable';
+import { useVariable } from '../../hooks/useVariable';
+import type { VariableValue } from '../types';
 import { queryMetricTree } from './metricTree';
-import type { VariableValue } from './types';
 
 export interface Props {
   name: string;

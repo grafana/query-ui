@@ -1,4 +1,6 @@
 import commonjs from '@rollup/plugin-commonjs';
+import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
+import json from '@rollup/plugin-json';
 import resolve from '@rollup/plugin-node-resolve';
 import { createRequire } from 'node:module';
 import path from 'node:path';
@@ -26,12 +28,20 @@ const config: RollupOptions[] = [
         tsconfig: 'tsconfig.build.json',
         jsx: 'automatic',
       }),
+      // Must come before dynamicImportVars: the translation catalogs are
+      // imported as JSON, and dynamicImportVars parses every module as JS.
+      json(),
+      dynamicImportVars(),
     ],
     output: [
       {
         format: 'cjs',
         sourcemap: true,
-        file: pkg.main,
+        // Locale catalogs are dynamic imports, so the CJS build emits chunks
+        // next to the entry and needs `dir` rather than `file`.
+        dir: path.dirname(pkg.main),
+        entryFileNames: path.basename(pkg.main),
+        chunkFileNames: '[name]-[hash].cjs',
         esModule: true,
         interop: 'compat',
       },
