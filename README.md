@@ -1,6 +1,8 @@
-# Grafana Scenes v2
+# Grafana Query UI
 
 A rewrite of scenes, optimized for pure React and agentic workflows.
+
+For an quick introduction to this library and why it exists please read [the overview](./docs/OVERVIEW.md)
 
 ## Workspace structure
 
@@ -8,6 +10,7 @@ A rewrite of scenes, optimized for pure React and agentic workflows.
 | -------------------- | ------------------- | -------------------------------------------------------- |
 | `packages/query-ui/` | `@grafana/query-ui` | Grafana scenes v2                                        |
 | `apps/scenarios/`    |                     | Vite app with mocked Grafana runtime for quick e2e tests |
+| `apps/demo-app/`     |                     | Grafana app plugin with library feature demos            |
 
 ## Agent tooling
 
