@@ -23,7 +23,7 @@ let initialized = false;
  * Fakes the subset of @grafana/runtime service wiring that Grafana's own
  * GrafanaApp.init() performs on boot (public/app/app.ts):
  * setDataSourceSrv, setRunRequest and setPluginImportUtils. Those are what
- * @grafana/scenes2's VizPanel and useDataQuery read through getDataSourceSrv,
+ * @grafana/query-ui's VizPanel and useDataQuery read through getDataSourceSrv,
  * getRunRequest and getPluginImportUtils, so without them both would throw
  * outside a real Grafana instance. Call once, before the app renders.
  */

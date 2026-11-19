@@ -1,5 +1,5 @@
 import { type DataFrame, type PanelData, VariableSort } from '@grafana/data';
-import { GridPanelLayout, useAdhocFilters, useVariableOptionsQuery, VizPanel } from '@grafana/scenes2';
+import { GridPanelLayout, useAdhocFilters, useVariableOptionsQuery, VizPanel } from '@grafana/query-ui';
 import { Button, Combobox, Field, LoadingPlaceholder, RadioButtonGroup, Stack } from '@grafana/ui';
 import React, { useMemo, useState } from 'react';
 

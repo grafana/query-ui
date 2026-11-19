@@ -4,7 +4,7 @@ import { expect, test, type ConsoleMessage, type Page } from '@playwright/test';
  * Collects everything that would indicate a broken boot — uncaught exceptions
  * and `console.error` calls. React surfaces provider and hook failures through
  * both, so a clean list is a real signal that the @grafana/ui theme, the
- * runtime config, and the @grafana/scenes2 alias all resolved.
+ * runtime config, and the @grafana/query-ui alias all resolved.
  */
 function collectPageErrors(page: Page): string[] {
   const errors: string[] = [];

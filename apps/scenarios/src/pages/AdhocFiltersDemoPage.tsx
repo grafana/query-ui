@@ -6,7 +6,7 @@ import {
   useDataQuery,
   VizConfigBuilder,
   VizPanel,
-} from '@grafana/scenes2';
+} from '@grafana/query-ui';
 import { Stack } from '@grafana/ui';
 
 import { PluginPage } from '../components/PluginPage';

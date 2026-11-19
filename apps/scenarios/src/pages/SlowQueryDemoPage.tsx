@@ -3,7 +3,7 @@ import {
   GridPanelLayout,
   TimeRangeContextPicker,
   TimeRangeRefresh,
-} from '@grafana/scenes2';
+} from '@grafana/query-ui';
 
 import { DemoPanel } from '../components/DemoPanel';
 import { PluginPage } from '../components/PluginPage';

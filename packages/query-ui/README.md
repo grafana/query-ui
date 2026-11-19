@@ -1,4 +1,4 @@
-# @grafana/scenes2
+# @grafana/query-ui
 
 A react library for building Grafana data visualization apps.
 
@@ -13,5 +13,5 @@ A react library for building Grafana data visualization apps.
 Components are exported from a single entry point:
 
 ```tsx
-import { VizPanel } from '@grafana/scenes2';
+import { VizPanel } from '@grafana/query-ui';
 ```

@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { TimeRangeContextProvider, UrlStateProvider } from '@grafana/scenes2';
+import { TimeRangeContextProvider, UrlStateProvider } from '@grafana/query-ui';
 
 import { AdhocFiltersDemoPage } from './pages/AdhocFiltersDemoPage';
 import { HomePage } from './pages/HomePage';

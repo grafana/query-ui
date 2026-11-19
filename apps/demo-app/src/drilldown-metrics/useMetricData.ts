@@ -1,4 +1,4 @@
-import { useDataQuery } from '@grafana/scenes2';
+import { useDataQuery } from '@grafana/query-ui';
 
 import { getMetricQuery } from './getMetricQuery';
 

@@ -1,4 +1,4 @@
-import { useInterpolator, VizPanel } from '@grafana/scenes2';
+import { useInterpolator, VizPanel } from '@grafana/query-ui';
 import { Stack, Tab, TabsBar } from '@grafana/ui';
 import { useState } from 'react';
 

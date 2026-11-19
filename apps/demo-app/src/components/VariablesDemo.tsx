@@ -5,7 +5,7 @@ import {
   VizPanel,
   VariableValueSelect,
   VariableTestQuery,
-} from '@grafana/scenes2';
+} from '@grafana/query-ui';
 import { Stack } from '@grafana/ui';
 import React from 'react';
 

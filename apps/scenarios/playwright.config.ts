@@ -23,7 +23,7 @@ export default defineConfig({
     },
   ],
   // Runs against the dev server, so `pnpm e2e` needs no build step and the
-  // suite exercises the same Vite pipeline (including the @grafana/scenes2
+  // suite exercises the same Vite pipeline (including the @grafana/query-ui
   // source alias) that `pnpm dev` serves.
   webServer: {
     command: `pnpm exec vite --port ${PORT} --strictPort`,

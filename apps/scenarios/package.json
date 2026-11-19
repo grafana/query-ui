@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "Standalone web app for building scenarios on top of @grafana/scenes2",
+  "description": "Standalone web app for building scenarios on top of @grafana/query-ui",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -19,7 +19,7 @@
     "@emotion/css": "^11.13.5",
     "@grafana/data": "^13.2.0",
     "@grafana/runtime": "^13.2.0",
-    "@grafana/scenes2": "workspace:*",
+    "@grafana/query-ui": "workspace:*",
     "@grafana/ui": "^13.2.0",
     "@tanstack/react-query": "^5.102.0",
     "react": "19.2.8",

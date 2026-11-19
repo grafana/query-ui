@@ -4,10 +4,10 @@ A rewrite of scenes, optimized for pure React and agentic workflows.
 
 ## Workspace structure
 
-| Location            | Package            | Description                                              |
-| ------------------- | ------------------ | -------------------------------------------------------- |
-| `packages/scenes2/` | `@grafana/scenes2` | Grafana scenes v2                                        |
-| `apps/scenarios/`   |                    | Vite app with mocked Grafana runtime for quick e2e tests |
+| Location             | Package             | Description                                              |
+| -------------------- | ------------------- | -------------------------------------------------------- |
+| `packages/query-ui/` | `@grafana/query-ui` | Grafana scenes v2                                        |
+| `apps/scenarios/`    |                     | Vite app with mocked Grafana runtime for quick e2e tests |
 
 ## Agent tooling
 
@@ -58,8 +58,8 @@ fails the build if the committed files are out of sync with `.hatch/`.
 ### Setup
 
 ```bash
-git clone git@github.com:grafana/scenes2.git
-cd scenes2
+git clone git@github.com:grafana/query-ui.git
+cd query-ui
 nvm install && nvm use  # use the Node version from .nvmrc
 corepack enable         # skip if you've already run this on this machine
 pnpm install
@@ -150,14 +150,14 @@ Packages publish to the public npm registry (`npmjs.org`) with
 `access: public` — no `.npmrc` or auth token required:
 
 ```bash
-pnpm add @grafana/scenes2
+pnpm add @grafana/query-ui
 ```
 
 Refer to each package's README for usage.
 
 **Core consumer surface** — what a Grafana plugin or app installs to build UI:
 
-- [`@grafana/scenes2`](packages/scenes2/README.md) — Scenes 2
+- [`@grafana/query-ui`](packages/query-ui/README.md) — Scenes 2
 
 ## License
 

@@ -8,7 +8,7 @@ import { initFakeGrafanaRuntime } from './grafana/initFakeGrafanaRuntime';
 import { ThemeProvider } from './providers/ThemeProvider';
 
 // Mirrors GrafanaApp.init() running before ReactDOM renders in a real Grafana
-// instance: @grafana/scenes2's VizPanel and useDataQuery read services off
+// instance: @grafana/query-ui's VizPanel and useDataQuery read services off
 // @grafana/runtime, so those need registering before anything below queries
 // data or resolves a panel plugin.
 initFakeGrafanaRuntime();

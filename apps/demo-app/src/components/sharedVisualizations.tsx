@@ -1,4 +1,4 @@
-import { VizConfigBuilders } from '@grafana/scenes2';
+import { VizConfigBuilders } from '@grafana/query-ui';
 import { GraphGradientMode, LineInterpolation, useTheme2 } from '@grafana/ui';
 import { VisibilityMode } from '@grafana/schema';
 import { useMemo } from 'react';
