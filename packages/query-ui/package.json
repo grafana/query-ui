@@ -56,7 +56,7 @@
     "@grafana/ui": "^13.2.0",
     "@tanstack/react-query": "^5.102.0",
     "@tanstack/react-virtual": "^3.14.10",
-    "lodash": "4.17.21",
+    "lodash": "4.18.1",
     "react-use": "^17.6.1",
     "rxjs": "^7.8.2"
   },
