@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import type { VariableType } from '@grafana/data';
+import type { ScopedVars, TimeRange, VariableType } from '@grafana/data';
 
 export type VariableValue = {
   label?: string;
@@ -50,3 +50,8 @@ export type VariableCustomFormatterFn = (
 
 export type InterpolationFormatParameter =
   string | VariableCustomFormatterFn | undefined;
+
+export interface QueryUIScopedVars extends ScopedVars {
+  __timeRange: { value: TimeRange };
+  __location: { value: Location };
+}
