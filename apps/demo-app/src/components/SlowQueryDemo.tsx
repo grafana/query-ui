@@ -37,9 +37,5 @@ const SlowQueryGraph = React.memo(function SlowQueryGraph(props: { name: string 
     queries: [{ refId: 'A', datasource: { uid: ds }, scenarioId: 'slow_query', stringInput: '3s', alias: props.name }],
   });
 
-  return (
-    <div style={{ height: 400 }}>
-      <VizPanel title={props.name} vizConfig={plainTimeSeriesGraph} data={data.data} />
-    </div>
-  );
+  return <VizPanel title={props.name} vizConfig={plainTimeSeriesGraph} data={data.data} />;
 });

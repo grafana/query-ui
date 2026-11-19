@@ -42,6 +42,7 @@ export {
   type GridPanelLayoutProps,
 } from './layout/GridPanelLayout';
 export { LazyLoader, type LazyLoaderProps } from './layout/LazyLoader';
+export { loadTranslations } from './locales/loadTranslations';
 export {
   TimeRangeContext,
   TimeRangeContextProvider,
@@ -69,9 +70,9 @@ export {
   useVariableOptionsQuery,
   type VariableOptionsQueryProps,
 } from './variables/query/useVariableOptionsQuery';
+export { VariableTestQuery } from './variables/testquery/VariableTestQuery';
 export {
   type VariableContextState,
   type VariableValue,
   type VariableValueOption,
 } from './variables/types';
-export { VariableTestQuery } from './variables/VariableTestQuery';
