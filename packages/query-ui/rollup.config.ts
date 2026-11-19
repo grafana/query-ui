@@ -1,4 +1,5 @@
 import commonjs from '@rollup/plugin-commonjs';
+import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
 import resolve from '@rollup/plugin-node-resolve';
 import { createRequire } from 'node:module';
 import path from 'node:path';
@@ -26,6 +27,7 @@ const config: RollupOptions[] = [
         tsconfig: 'tsconfig.build.json',
         jsx: 'automatic',
       }),
+      dynamicImportVars(),
     ],
     output: [
       {
