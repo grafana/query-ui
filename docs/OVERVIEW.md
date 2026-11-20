@@ -47,7 +47,7 @@ const queryClient = new QueryClient();
 
 ```tsx
 <TimeRangeContextProvider initFrom="now-1h" initTo="now">
-  <TimeRangeContextPicker />
+  <TimeRangePicker />
   <TimeRangeRefresh />
   <Dashboard />
 </TimeRangeContextProvider>
