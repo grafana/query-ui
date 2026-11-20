@@ -1,16 +1,21 @@
 import React, { useContext } from 'react';
 
-import { useUrlState } from '../url/UrlStateContext';
+import { useUrlState, type UrlValue } from '../url/UrlStateContext';
 import {
   VariableContext,
   type VariableValue,
+  type VariableValueOrValues,
   type VariableContextState,
   type VariableValueOption,
 } from './types';
 
 export interface DefineVariableProps {
   name: string;
-  value?: VariableValue;
+  /**
+   * The value to start from. Pass a list, even an empty one, to make this a
+   * multi-value variable. See {@link useVariableContextState}.
+   */
+  value?: VariableValueOrValues;
   loading?: boolean;
   /** Keeps the value out of the URL. See {@link useVariableContextState}. */
   skipUrlSync?: boolean;
@@ -25,7 +30,7 @@ export function DefineVariable({
   children,
 }: DefineVariableProps) {
   const parentContext = useContext(VariableContext);
-  const context = useVariableContextState({
+  const context = useVariableContextState<VariableValueOrValues>({
     name,
     value: value ?? {},
     loading: loading,
@@ -40,9 +45,14 @@ export function DefineVariable({
   );
 }
 
-interface VariableValueStateInput {
+interface VariableValueStateInput<T extends VariableValueOrValues> {
   name: string;
-  value: VariableValue;
+  /**
+   * The value to start from. A list makes this a multi-value variable, which
+   * syncs to one `var-<name>` query parameter per value. Whether it is a list
+   * is read once, on mount.
+   */
+  value: T;
   loading?: boolean;
   parent?: VariableContextState<unknown>;
   /**
@@ -52,8 +62,17 @@ interface VariableValueStateInput {
   skipUrlSync?: boolean;
 }
 
-/** The value as the query string carries it. Nothing selected is left out. */
-function toUrlValue(value: VariableValue): string | undefined {
+/**
+ * The value as the query string carries it: a string, or a list of strings for
+ * a multi-value variable. Nothing selected is left out.
+ */
+function toUrlValue(value: VariableValueOrValues): UrlValue | undefined {
+  if (Array.isArray(value)) {
+    const values = value.flatMap((item) => toUrlValue(item) ?? []);
+
+    return values.length > 0 ? values : undefined;
+  }
+
   if (value.value === undefined || value.value === '') {
     return undefined;
   }
@@ -61,20 +80,50 @@ function toUrlValue(value: VariableValue): string | undefined {
   return String(value.value);
 }
 
-export function useVariableContextState(
-  input: VariableValueStateInput,
-): VariableContextState<VariableValue> {
+/**
+ * The value the query string holds, with the label of the matching option where
+ * there is one.
+ */
+function fromUrlValue(
+  urlValue: UrlValue,
+  options: readonly VariableValueOption[],
+): VariableValueOrValues {
+  if (typeof urlValue !== 'string') {
+    return urlValue.map((item) => fromUrlValue(item, options) as VariableValue);
+  }
+
+  const option = options.find((o) => String(o.value) === urlValue);
+
+  return { value: urlValue, label: option?.label ?? urlValue };
+}
+
+function sameUrlValue(a: UrlValue | undefined, b: UrlValue | undefined) {
+  if (a === undefined || b === undefined || typeof a === 'string') {
+    return a === b;
+  }
+
+  return (
+    typeof b !== 'string' &&
+    a.length === b.length &&
+    a.every((item, index) => item === b[index])
+  );
+}
+
+export function useVariableContextState<
+  T extends VariableValueOrValues = VariableValue,
+>(input: VariableValueStateInput<T>): VariableContextState<T> {
   const [urlKey] = React.useState(() => `var-${input.name}`);
-  const [urlState, updateUrlState] = useUrlState<Record<string, string>>(
+  const [isMulti] = React.useState(() => Array.isArray(input.value));
+  const [urlState, updateUrlState] = useUrlState<Record<string, UrlValue>>(
     [urlKey],
-    { skip: input.skipUrlSync },
+    { skip: input.skipUrlSync, multiValueKeys: isMulti ? [urlKey] : [] },
   );
   const urlValue = urlState[urlKey];
 
   const [loading, setLoading] = React.useState(input.loading);
   // A value in the URL wins over the one the variable was given
-  const [value, setValue] = React.useState<VariableValue>(() =>
-    urlValue === undefined ? input.value : { value: urlValue, label: urlValue },
+  const [value, setValue] = React.useState<T>(() =>
+    urlValue === undefined ? input.value : (fromUrlValue(urlValue, []) as T),
   );
   const [error, setError] = React.useState<Error | null>(null);
   const [options, setOptions] = React.useState<VariableValueOption[]>([]);
@@ -83,27 +132,25 @@ export function useVariableContextState(
   // set while rendering, so that the new value never shows up a render late.
   const [syncedUrlValue, setSyncedUrlValue] = React.useState(urlValue);
 
-  if (urlValue !== syncedUrlValue) {
+  if (!sameUrlValue(urlValue, syncedUrlValue)) {
     setSyncedUrlValue(urlValue);
 
-    if (urlValue !== toUrlValue(value)) {
-      const option = options.find((o) => String(o.value) === urlValue);
-
+    if (!sameUrlValue(urlValue, toUrlValue(value))) {
       // A parameter that is gone puts the variable back to where it started
       setValue(
         urlValue === undefined
           ? input.value
-          : { value: urlValue, label: option?.label ?? urlValue },
+          : (fromUrlValue(urlValue, options) as T),
       );
     }
   }
 
   const onChange = React.useCallback(
-    (newValue: VariableValue) => {
+    (newValue: T) => {
       setValue(newValue);
       updateUrlState({ [urlKey]: toUrlValue(newValue) } as Record<
         string,
-        string
+        UrlValue
       >);
     },
     [updateUrlState, urlKey],
@@ -113,10 +160,17 @@ export function useVariableContextState(
     () => ({
       name: input.name,
       value,
+      isMulti,
       loading,
       error,
       options,
       getValue: (fieldPath?: string) => {
+        if (Array.isArray(value)) {
+          return fieldPath === 'text'
+            ? value.map((item) => item.label ?? item.value)
+            : value.map((item) => item.value);
+        }
+
         if (fieldPath === 'text') {
           return value.label;
         }
@@ -129,6 +183,15 @@ export function useVariableContextState(
       onSetError: setError,
       parent: input.parent,
     }),
-    [input.name, value, loading, error, options, onChange, input.parent],
+    [
+      input.name,
+      value,
+      isMulti,
+      loading,
+      error,
+      options,
+      onChange,
+      input.parent,
+    ],
   );
 }

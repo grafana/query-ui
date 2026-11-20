@@ -7,6 +7,12 @@ export type VariableValue = {
   properties?: Record<string, unknown>;
 };
 
+/**
+ * What a variable that takes values can hold: one value, or a list of them for
+ * a multi-value variable.
+ */
+export type VariableValueOrValues = VariableValue | VariableValue[];
+
 export interface VariableValueOption {
   label: string;
   value: string | number | boolean;
@@ -17,6 +23,8 @@ export interface VariableValueOption {
 export interface VariableContextState<T = unknown> {
   name: string;
   value: T;
+  /** Whether the value is a list, so formatters join it as one. */
+  isMulti?: boolean;
   options?: VariableValueOption[];
   loading?: boolean;
   error?: Error | null;

@@ -99,6 +99,8 @@ Because nesting defines scope, a variable sees only the variables above it. `Dat
 
 `useVariable(name)` returns the variable's state and setters (`onChange`, `onOptionsChange`, `onSetLoading`, `onSetError`). Values sync to the `var-<name>` query parameter unless the variable sets `skipUrlSync`.
 
+Give `DefineVariable` a list as its `value` (even an empty one) to make it a multi-value variable. Its value is then always a list of `VariableValue`, it syncs to one parameter per value (`?var-pod=a&var-pod=b`), and formatters join the values (`${pod:csv}` gives `a,b`).
+
 #### Interpolation
 
 `useInterpolator` replaces variable expressions (`$var`, `${var}`, `[[var]]`, `${var.field}`, `${var:format}`) with the values of the closest variables. It returns a tuple: the interpolated string, and a `loading` boolean that's `true` when any variable the string references is still loading.

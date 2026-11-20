@@ -73,5 +73,6 @@ export {
   type VariableContextState,
   type VariableValue,
   type VariableValueOption,
+  type VariableValueOrValues,
 } from './variables/types';
 export { VariableTestQuery } from './variables/VariableTestQuery';
