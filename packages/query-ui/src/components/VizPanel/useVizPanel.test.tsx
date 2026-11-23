@@ -2,10 +2,14 @@ import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import {
   createTheme,
+  type FieldConfigPropertyItem,
+  FieldType,
   getDefaultTimeRange,
   LoadingState,
   type PanelData,
   PanelPlugin,
+  standardFieldConfigEditorRegistry,
+  toDataFrame,
 } from '@grafana/data';
 import { getPluginImportUtils } from '@grafana/runtime';
 
@@ -201,6 +205,44 @@ describe('useVizPanel title and description', () => {
     expect(result.current.getDescription?.()).toBe(
       '<p><strong>Env</strong> is prod</p>\n',
     );
+  });
+
+  it('interpolates variables in field config data links', () => {
+    // Grafana registers the standard field options on boot. Without them the
+    // plugin defaults would strip the links from the field config.
+    standardFieldConfigEditorRegistry.register({
+      id: 'links',
+      path: 'links',
+      name: 'Data links',
+      process: (value: unknown) => value,
+      shouldApply: () => true,
+    } as unknown as FieldConfigPropertyItem);
+    mockPlugin(new PanelPlugin(() => null).useFieldConfig());
+
+    const config = {
+      ...vizConfig,
+      fieldConfig: {
+        defaults: { links: [{ title: 'Logs in $env', url: '' }] },
+        overrides: [],
+      },
+    } as VizConfig;
+    const data: PanelData = {
+      ...panelData(LoadingState.Done),
+      series: [
+        toDataFrame({
+          fields: [{ name: 'A', type: FieldType.number, values: [1] }],
+        }),
+      ],
+    };
+
+    const { result } = renderHook(
+      () => useVizPanel({ vizConfig: config, data }),
+      { wrapper },
+    );
+
+    const [field] = result.current.panelData.series[0].fields;
+    const [link] = field.getLinks?.({ valueRowIndex: 0 }) ?? [];
+    expect(link?.title).toBe('Logs in prod');
   });
 
   it('returns no description getter when no description is set', () => {

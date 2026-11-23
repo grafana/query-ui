@@ -8,6 +8,7 @@ import {
   type FieldConfigSource,
   getDefaultTimeRange,
   getPanelOptionsWithDefaults,
+  type InterpolateFunction,
   LoadingState,
   type PanelPlugin,
   renderMarkdown,
@@ -15,7 +16,15 @@ import {
 import { config, getPluginImportUtils } from '@grafana/runtime';
 
 import { TimeRangeContext } from '../../time/TimeRangeContext';
-import { useInterpolator } from '../../variables/interpolation/useInterpolator';
+import {
+  interpolate,
+  useInterpolator,
+} from '../../variables/interpolation/useInterpolator';
+import {
+  type InterpolationFormatParameter,
+  type QueryUIScopedVars,
+  VariableContext,
+} from '../../variables/types';
 import type { VizConfig } from './PanelBuilders/types';
 import type { VizPanelProps } from './VizPanel';
 
@@ -43,6 +52,23 @@ export function useVizPanel(props: VizPanelProps) {
   const getDescription = useCallback(
     () => renderMarkdown(description),
     [description],
+  );
+
+  // Passed to the panel plugin, which interpolates its own strings with it,
+  // for example in data links or text panel content.
+  const variableContext = useContext(VariableContext);
+
+  const replaceVariables: InterpolateFunction = useCallback(
+    (value, scopedVars, format) => {
+      const [result] = interpolate(
+        value,
+        variableContext,
+        scopedVars as QueryUIScopedVars | undefined,
+        format as InterpolationFormatParameter,
+      );
+      return result;
+    },
+    [variableContext],
   );
 
   const [transient, setTransient] = useState<TransientConfig>(() => ({
@@ -137,11 +163,11 @@ export function useVizPanel(props: VizPanelProps) {
       data: rawFrames,
       fieldConfig: withDefaults.fieldConfig,
       fieldConfigRegistry,
-      replaceVariables: (value: string) => value,
+      replaceVariables,
       theme: config.theme2,
       timeZone: timeZone,
     });
-  }, [rawFrames, withDefaults.fieldConfig, timeZone, plugin]);
+  }, [rawFrames, withDefaults.fieldConfig, timeZone, plugin, replaceVariables]);
 
   const panelDataApplied = useMemo(() => {
     if (!rawData) {
@@ -187,6 +213,7 @@ export function useVizPanel(props: VizPanelProps) {
     onChangeTimeRange,
     onFieldConfigChange,
     onOptionsChange,
+    replaceVariables,
   };
 }
 
