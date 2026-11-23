@@ -8,23 +8,15 @@ import {
   type FieldConfigSource,
   getDefaultTimeRange,
   getPanelOptionsWithDefaults,
-  type InterpolateFunction,
   LoadingState,
   type PanelPlugin,
   renderMarkdown,
 } from '@grafana/data';
 import { config, getPluginImportUtils } from '@grafana/runtime';
 
-import { TimeRangeContext } from '../../time/TimeRangeContext';
-import {
-  interpolate,
-  useInterpolator,
-} from '../../variables/interpolation/useInterpolator';
-import {
-  type InterpolationFormatParameter,
-  type QueryUIScopedVars,
-  VariableContext,
-} from '../../variables/types';
+import { useTimeRange } from '../../hooks/useTimeRange';
+import { useInterpolator } from '../../variables/interpolation/useInterpolator';
+import { useReplaceVariables } from '../../variables/interpolation/useReplaceVariables';
 import type { VizConfig } from './PanelBuilders/types';
 import type { VizPanelProps } from './VizPanel';
 
@@ -54,22 +46,7 @@ export function useVizPanel(props: VizPanelProps) {
     [description],
   );
 
-  // Passed to the panel plugin, which interpolates its own strings with it,
-  // for example in data links or text panel content.
-  const variableContext = useContext(VariableContext);
-
-  const replaceVariables: InterpolateFunction = useCallback(
-    (value, scopedVars, format) => {
-      const [result] = interpolate(
-        value,
-        variableContext,
-        scopedVars as QueryUIScopedVars | undefined,
-        format as InterpolationFormatParameter,
-      );
-      return result;
-    },
-    [variableContext],
-  );
+  const replaceVariables = useReplaceVariables();
 
   const [transient, setTransient] = useState<TransientConfig>(() => ({
     vizConfig,
@@ -122,15 +99,13 @@ export function useVizPanel(props: VizPanelProps) {
     [vizConfig],
   );
 
-  // Optional: a panel rendered outside a provider has no range to change.
-  const onChangeTimeRangeFromContext =
-    useContext(TimeRangeContext)?.onChangeTimeRange;
+  const { onChangeTimeRange: onChangeTimeRangeFromContext } = useTimeRange();
 
   const onChangeTimeRange = useCallback(
     (range: AbsoluteTimeRange) => {
       const from = dateTime(range.from);
       const to = dateTime(range.to);
-      onChangeTimeRangeFromContext?.({ from, to, raw: { from, to } });
+      onChangeTimeRangeFromContext({ from, to, raw: { from, to } });
     },
     [onChangeTimeRangeFromContext],
   );

@@ -11,6 +11,7 @@ import {
 } from '@grafana/data';
 import { getPluginImportUtils } from '@grafana/runtime';
 
+import { TimeRangeContextProvider } from '../../time/TimeRangeContext';
 import { DefineVariable } from '../../variables/DefineVariable';
 import type { VizConfig } from './PanelBuilders/types';
 import { VizPanel } from './VizPanel';
@@ -58,6 +59,15 @@ const data: PanelData = {
   timeRange: getDefaultTimeRange(),
 };
 
+// VizPanel requires a time range provider above it
+function TimeRangeWrapper({ children }: { children: ReactNode }) {
+  return (
+    <TimeRangeContextProvider initFrom="now-6h" initTo="now" timeZone="utc">
+      {children}
+    </TimeRangeContextProvider>
+  );
+}
+
 function FakePanel({ replaceVariables }: PanelProps) {
   return <div>{replaceVariables('Fake panel in $env')}</div>;
 }
@@ -75,7 +85,9 @@ describe('VizPanel', () => {
   });
 
   it('renders the panel plugin component', () => {
-    render(<VizPanel vizConfig={vizConfig} data={data} />);
+    render(<VizPanel vizConfig={vizConfig} data={data} />, {
+      wrapper: TimeRangeWrapper,
+    });
 
     expect(screen.getByText(/^Fake panel in/)).toBeInTheDocument();
   });
@@ -85,6 +97,7 @@ describe('VizPanel', () => {
       <DefineVariable name="env" value={{ value: 'prod', label: 'Prod' }}>
         <VizPanel vizConfig={vizConfig} data={data} />
       </DefineVariable>,
+      { wrapper: TimeRangeWrapper },
     );
 
     expect(screen.getByText('Fake panel in prod')).toBeInTheDocument();
