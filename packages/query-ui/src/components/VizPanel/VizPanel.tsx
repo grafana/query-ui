@@ -35,6 +35,7 @@ export function VizPanel(props: VizPanelProps) {
     onCancelQuery,
     onFieldConfigChange,
     onOptionsChange,
+    replaceVariables,
   } = useVizPanel(props);
   const panelContext = usePanelContextState({
     fieldConfig,
@@ -76,7 +77,7 @@ export function VizPanel(props: VizPanelProps) {
                       transparent={false}
                       onFieldConfigChange={onFieldConfigChange}
                       onOptionsChange={onOptionsChange}
-                      replaceVariables={(value: string) => value}
+                      replaceVariables={replaceVariables}
                       onChangeTimeRange={onChangeTimeRange}
                       eventBus={panelContext.eventBus}
                     />

@@ -35,7 +35,7 @@ export function useInterpolator(
   }, [input, context, scopedVars, format]);
 }
 
-function interpolate(
+export function interpolate(
   target: string,
   context: VariableContextState<unknown> | undefined,
   scopedVars?: QueryUIScopedVars,

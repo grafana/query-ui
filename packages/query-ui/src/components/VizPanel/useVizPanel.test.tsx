@@ -2,13 +2,18 @@ import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import {
   createTheme,
+  type FieldConfigPropertyItem,
+  FieldType,
   getDefaultTimeRange,
   LoadingState,
   type PanelData,
   PanelPlugin,
+  standardFieldConfigEditorRegistry,
+  toDataFrame,
 } from '@grafana/data';
 import { getPluginImportUtils } from '@grafana/runtime';
 
+import { TimeRangeContextProvider } from '../../time/TimeRangeContext';
 import { DefineVariable } from '../../variables/DefineVariable';
 import type { VizConfig } from './PanelBuilders/types';
 import { useVizPanel } from './useVizPanel';
@@ -29,6 +34,15 @@ function panelData(state: LoadingState): PanelData {
   return { state, series: [], timeRange: getDefaultTimeRange() };
 }
 
+// useVizPanel requires a time range provider above it
+function TimeRangeWrapper({ children }: { children: ReactNode }) {
+  return (
+    <TimeRangeContextProvider initFrom="now-6h" initTo="now" timeZone="utc">
+      {children}
+    </TimeRangeContextProvider>
+  );
+}
+
 function mockPlugin(cached: PanelPlugin | undefined) {
   vi.mocked(getPluginImportUtils).mockReturnValue({
     getPanelPluginFromCache: () => cached,
@@ -43,24 +57,27 @@ describe('useVizPanel isLoading', () => {
   });
 
   it('is true while the query is loading', () => {
-    const { result } = renderHook(() =>
-      useVizPanel({ vizConfig, data: panelData(LoadingState.Loading) }),
+    const { result } = renderHook(
+      () => useVizPanel({ vizConfig, data: panelData(LoadingState.Loading) }),
+      { wrapper: TimeRangeWrapper },
     );
 
     expect(result.current.isLoading).toBe(true);
   });
 
   it('is true before any data has arrived', () => {
-    const { result } = renderHook(() =>
-      useVizPanel({ vizConfig, data: undefined }),
+    const { result } = renderHook(
+      () => useVizPanel({ vizConfig, data: undefined }),
+      { wrapper: TimeRangeWrapper },
     );
 
     expect(result.current.isLoading).toBe(true);
   });
 
   it('is false once the query is done', () => {
-    const { result } = renderHook(() =>
-      useVizPanel({ vizConfig, data: panelData(LoadingState.Done) }),
+    const { result } = renderHook(
+      () => useVizPanel({ vizConfig, data: panelData(LoadingState.Done) }),
+      { wrapper: TimeRangeWrapper },
     );
 
     expect(result.current.isLoading).toBe(false);
@@ -69,7 +86,10 @@ describe('useVizPanel isLoading', () => {
   it('switches from true to false when the query finishes', () => {
     const { result, rerender } = renderHook(
       ({ data }: { data?: PanelData }) => useVizPanel({ vizConfig, data }),
-      { initialProps: { data: panelData(LoadingState.Loading) } },
+      {
+        wrapper: TimeRangeWrapper,
+        initialProps: { data: panelData(LoadingState.Loading) },
+      },
     );
 
     expect(result.current.isLoading).toBe(true);
@@ -82,8 +102,9 @@ describe('useVizPanel isLoading', () => {
   it('is true while the plugin is importing, even with finished data', () => {
     mockPlugin(undefined);
 
-    const { result } = renderHook(() =>
-      useVizPanel({ vizConfig, data: panelData(LoadingState.Done) }),
+    const { result } = renderHook(
+      () => useVizPanel({ vizConfig, data: panelData(LoadingState.Done) }),
+      { wrapper: TimeRangeWrapper },
     );
 
     expect(result.current.isLoading).toBe(true);
@@ -105,7 +126,9 @@ describe('useVizPanel onFieldConfigChange', () => {
 
   it('merges a change into the current field config', () => {
     const config = makeVizConfig('short');
-    const { result } = renderHook(() => useVizPanel({ vizConfig: config }));
+    const { result } = renderHook(() => useVizPanel({ vizConfig: config }), {
+      wrapper: TimeRangeWrapper,
+    });
 
     act(() => {
       result.current.onFieldConfigChange({
@@ -122,7 +145,9 @@ describe('useVizPanel onFieldConfigChange', () => {
 
   it('replaces the field config when replace is true', () => {
     const config = makeVizConfig('short');
-    const { result } = renderHook(() => useVizPanel({ vizConfig: config }));
+    const { result } = renderHook(() => useVizPanel({ vizConfig: config }), {
+      wrapper: TimeRangeWrapper,
+    });
 
     act(() => {
       result.current.onFieldConfigChange(
@@ -138,7 +163,7 @@ describe('useVizPanel onFieldConfigChange', () => {
     const config = makeVizConfig('short');
     const { result, rerender } = renderHook(
       ({ vizConfig }: { vizConfig: VizConfig }) => useVizPanel({ vizConfig }),
-      { initialProps: { vizConfig: config } },
+      { wrapper: TimeRangeWrapper, initialProps: { vizConfig: config } },
     );
 
     act(() => {
@@ -155,7 +180,10 @@ describe('useVizPanel onFieldConfigChange', () => {
   it('discards the change when a new vizConfig arrives', () => {
     const { result, rerender } = renderHook(
       ({ vizConfig }: { vizConfig: VizConfig }) => useVizPanel({ vizConfig }),
-      { initialProps: { vizConfig: makeVizConfig('short') } },
+      {
+        wrapper: TimeRangeWrapper,
+        initialProps: { vizConfig: makeVizConfig('short') },
+      },
     );
 
     act(() => {
@@ -177,9 +205,11 @@ describe('useVizPanel title and description', () => {
 
   function wrapper({ children }: { children: ReactNode }) {
     return (
-      <DefineVariable name="env" value={{ value: 'prod', label: 'Prod' }}>
-        {children}
-      </DefineVariable>
+      <TimeRangeWrapper>
+        <DefineVariable name="env" value={{ value: 'prod', label: 'Prod' }}>
+          {children}
+        </DefineVariable>
+      </TimeRangeWrapper>
     );
   }
 
@@ -203,8 +233,48 @@ describe('useVizPanel title and description', () => {
     );
   });
 
+  it('interpolates variables in field config data links', () => {
+    // Grafana registers the standard field options on boot. Without them the
+    // plugin defaults would strip the links from the field config.
+    standardFieldConfigEditorRegistry.register({
+      id: 'links',
+      path: 'links',
+      name: 'Data links',
+      process: (value: unknown) => value,
+      shouldApply: () => true,
+    } as unknown as FieldConfigPropertyItem);
+    mockPlugin(new PanelPlugin(() => null).useFieldConfig());
+
+    const config = {
+      ...vizConfig,
+      fieldConfig: {
+        defaults: { links: [{ title: 'Logs in $env', url: '' }] },
+        overrides: [],
+      },
+    } as VizConfig;
+    const data: PanelData = {
+      ...panelData(LoadingState.Done),
+      series: [
+        toDataFrame({
+          fields: [{ name: 'A', type: FieldType.number, values: [1] }],
+        }),
+      ],
+    };
+
+    const { result } = renderHook(
+      () => useVizPanel({ vizConfig: config, data }),
+      { wrapper },
+    );
+
+    const [field] = result.current.panelData.series[0].fields;
+    const [link] = field.getLinks?.({ valueRowIndex: 0 }) ?? [];
+    expect(link?.title).toBe('Logs in prod');
+  });
+
   it('returns no description getter when no description is set', () => {
-    const { result } = renderHook(() => useVizPanel({ vizConfig }));
+    const { result } = renderHook(() => useVizPanel({ vizConfig }), {
+      wrapper: TimeRangeWrapper,
+    });
 
     expect(result.current.getDescription).toBeUndefined();
   });

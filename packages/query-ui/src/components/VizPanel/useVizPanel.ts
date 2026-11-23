@@ -14,8 +14,9 @@ import {
 } from '@grafana/data';
 import { config, getPluginImportUtils } from '@grafana/runtime';
 
-import { TimeRangeContext } from '../../time/TimeRangeContext';
+import { useTimeRange } from '../../hooks/useTimeRange';
 import { useInterpolator } from '../../variables/interpolation/useInterpolator';
+import { useReplaceVariables } from '../../variables/interpolation/useReplaceVariables';
 import type { VizConfig } from './PanelBuilders/types';
 import type { VizPanelProps } from './VizPanel';
 
@@ -44,6 +45,8 @@ export function useVizPanel(props: VizPanelProps) {
     () => renderMarkdown(description),
     [description],
   );
+
+  const replaceVariables = useReplaceVariables();
 
   const [transient, setTransient] = useState<TransientConfig>(() => ({
     vizConfig,
@@ -96,15 +99,13 @@ export function useVizPanel(props: VizPanelProps) {
     [vizConfig],
   );
 
-  // Optional: a panel rendered outside a provider has no range to change.
-  const onChangeTimeRangeFromContext =
-    useContext(TimeRangeContext)?.onChangeTimeRange;
+  const { onChangeTimeRange: onChangeTimeRangeFromContext } = useTimeRange();
 
   const onChangeTimeRange = useCallback(
     (range: AbsoluteTimeRange) => {
       const from = dateTime(range.from);
       const to = dateTime(range.to);
-      onChangeTimeRangeFromContext?.({ from, to, raw: { from, to } });
+      onChangeTimeRangeFromContext({ from, to, raw: { from, to } });
     },
     [onChangeTimeRangeFromContext],
   );
@@ -137,11 +138,11 @@ export function useVizPanel(props: VizPanelProps) {
       data: rawFrames,
       fieldConfig: withDefaults.fieldConfig,
       fieldConfigRegistry,
-      replaceVariables: (value: string) => value,
+      replaceVariables,
       theme: config.theme2,
       timeZone: timeZone,
     });
-  }, [rawFrames, withDefaults.fieldConfig, timeZone, plugin]);
+  }, [rawFrames, withDefaults.fieldConfig, timeZone, plugin, replaceVariables]);
 
   const panelDataApplied = useMemo(() => {
     if (!rawData) {
@@ -187,6 +188,7 @@ export function useVizPanel(props: VizPanelProps) {
     onChangeTimeRange,
     onFieldConfigChange,
     onOptionsChange,
+    replaceVariables,
   };
 }
 
