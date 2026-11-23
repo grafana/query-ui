@@ -2,6 +2,38 @@
 
 This template is a starting point for building an app plugin with [scenes](https://grafana.com/developers/scenes) for Grafana.
 
+## Local self-instrumentation
+
+From the workspace root, start Grafana and its local observability backends:
+
+```bash
+pnpm --filter scenes2-demo server
+```
+
+Open Grafana at <http://localhost:3000>. The following data sources are provisioned automatically:
+
+| Name and UID      | Backend    | Host endpoint           |
+| ----------------- | ---------- | ----------------------- |
+| `gdev-prometheus` | Prometheus | <http://localhost:9090> |
+| `gdev-loki`       | Loki       | <http://localhost:3100> |
+| `gdev-tempo`      | Tempo      | <http://localhost:3200> |
+| `gdev-pyroscope`  | Pyroscope  | <http://localhost:4040> |
+
+This setup adapts Grafana's [self-instrumentation block](https://github.com/grafana/grafana/tree/main/devenv/docker/blocks/self-instrumentation) without requiring a separate Grafana checkout.
+
+Prometheus scrapes Grafana's metrics. Alloy collects Grafana's JSON log files from a shared volume, receives backend traces and browser Faro events, and scrapes profiles from `grafana:6060`. Tempo generates service-graph and span metrics in Prometheus. The data sources link metrics, logs, traces, and profiles.
+
+The backend configs live in [`docker/self-instrumentation`](./docker/self-instrumentation). Alloy's UI is at <http://localhost:12345>, and its browser collector is at <http://localhost:12347/collect>. Backend and collector ports are published on the host's loopback interface only. Stop any other local stack using these ports before starting this one.
+
+To check ingestion after startup, use Explore:
+
+- Prometheus: `up{job="grafana"}` should return `1` after the first 15-second scrape.
+- Loki: `{job="grafana"} | json` shows backend logs.
+- Tempo: `{ resource.service.name = "grafana" }` finds backend traces after browsing Grafana.
+- Pyroscope: select the `grafana` service after the first profile scrape.
+
+This is a development stack, with no durable backend storage configured. Tempo retains traces for one hour.
+
 ## What are Grafana app plugins?
 
 App plugins can let you create a custom out-of-the-box monitoring experience by custom pages, nested datasources and panel plugins.

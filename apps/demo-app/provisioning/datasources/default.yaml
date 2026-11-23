@@ -4,3 +4,65 @@ datasources:
   - name: gdev-testdata
     isDefault: false
     type: testdata
+
+  - name: gdev-prometheus
+    uid: gdev-prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    jsonData:
+      manageAlerts: false
+      prometheusType: Prometheus
+      prometheusVersion: 3.5.0
+      exemplarTraceIdDestinations:
+        - name: traceID
+          datasourceUid: gdev-tempo
+
+  - name: gdev-loki
+    uid: gdev-loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: false
+    jsonData:
+      manageAlerts: false
+      derivedFields:
+        - name: traceID
+          matcherRegex: '(?:"traceID"\s*:\s*"|traceID=)(\w+)'
+          url: '$${__value.raw}'
+          datasourceUid: gdev-tempo
+
+  - name: gdev-tempo
+    uid: gdev-tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    editable: false
+    jsonData:
+      tracesToLogsV2:
+        datasourceUid: gdev-loki
+        spanStartTimeShift: '-5m'
+        spanEndTimeShift: '5m'
+        customQuery: true
+        query: '{filename="/var/log/grafana/grafana.log"} |="$${__span.traceId}"'
+      tracesToProfiles:
+        datasourceUid: gdev-pyroscope
+        tags: [{ key: 'service.name', value: 'service_name' }]
+        profileTypeId: 'process_cpu:cpu:nanoseconds:cpu:nanoseconds'
+      tracesToMetrics:
+        datasourceUid: gdev-prometheus
+        spanStartTimeShift: '-1h'
+        spanEndTimeShift: '1h'
+        tags: [{ key: 'service.name', value: 'service' }]
+        queries:
+          - name: Metrics
+            query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags}[5m]))'
+      serviceMap:
+        datasourceUid: gdev-prometheus
+
+  - name: gdev-pyroscope
+    uid: gdev-pyroscope
+    type: grafana-pyroscope-datasource
+    access: proxy
+    url: http://pyroscope:4040
+    editable: false

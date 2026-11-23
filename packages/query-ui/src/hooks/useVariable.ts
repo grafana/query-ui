@@ -19,5 +19,5 @@ export function useVariable<T = unknown>(
     ctx = ctx?.parent;
   }
 
-  throw new Error(`Variable ${name} found`);
+  throw new Error(`Variable ${name} not found`);
 }

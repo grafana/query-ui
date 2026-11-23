@@ -10,13 +10,13 @@ import { fromEvent, lastValueFrom, takeUntil } from 'rxjs';
 import {
   LoadingState,
   rangeUtil,
-  type DataQuery,
   type DataQueryRequest,
-  type DataSourceRef,
   type PanelData,
   type TimeRange,
 } from '@grafana/data';
-import { getDataSourceSrv, getRunRequest } from '@grafana/runtime';
+import { getDataSourceInstance } from '@grafana/plugin-compat/datasources';
+import { getRunRequest } from '@grafana/runtime';
+import type { DataQuery, DataSourceRef } from '@grafana/schema';
 
 import { AdhocFiltersContext } from '../filters/AdhocFiltersContext';
 import { useTimeRange } from './useTimeRange';
@@ -39,7 +39,6 @@ export function useDataQuery<T extends DataQuery>(
   options: DataQueryOptions<T>,
 ): UseQueryResult<PanelData, Error> {
   const runRequest = getRunRequest();
-  const dataSourceSrv = getDataSourceSrv();
   const timeRangeCtx = useTimeRange();
   const adhocFiltersCtx = useContext(AdhocFiltersContext);
   const interpolate = (value: string) => value; // TODO: use actual variable interpolation
@@ -50,7 +49,7 @@ export function useDataQuery<T extends DataQuery>(
   const dsRef = findFirstDatasource(options.queries);
   const dsQuery = useQuery({
     queryKey: ['ds', dsRef],
-    queryFn: () => dataSourceSrv.get(dsRef),
+    queryFn: () => getDataSourceInstance(dsRef),
     staleTime: Infinity,
   });
 
