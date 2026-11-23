@@ -6,10 +6,10 @@ import {
   type FormatVariable,
 } from './formatRegistry';
 
-function testVariable(value: FormatValue, text?: FormatValue): FormatVariable {
+function testVariable(value: FormatValue, label?: FormatValue): FormatVariable {
   return {
     name: 'server',
-    getValue: (fieldPath) => (fieldPath === 'text' ? text : value),
+    getValue: (_fieldPath, returnLabel) => (returnLabel ? label : value),
   };
 }
 

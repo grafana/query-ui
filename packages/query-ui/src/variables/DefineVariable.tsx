@@ -160,18 +160,18 @@ export function useVariableContextState<
     () => ({
       name: input.name,
       value,
-      isMulti,
       loading,
       error,
       options,
-      getValue: (fieldPath?: string) => {
+      getValue: (_fieldPath?: string, returnLabel?: boolean) => {
         if (Array.isArray(value)) {
-          return fieldPath === 'text'
-            ? value.map((item) => item.label ?? item.value)
-            : value.map((item) => item.value);
+          if (returnLabel) {
+            return value.map((item) => item.label ?? item.value);
+          }
+          return value.map((item) => item.value);
         }
 
-        if (fieldPath === 'text') {
+        if (returnLabel) {
           return value.label;
         }
 
@@ -183,15 +183,6 @@ export function useVariableContextState<
       onSetError: setError,
       parent: input.parent,
     }),
-    [
-      input.name,
-      value,
-      isMulti,
-      loading,
-      error,
-      options,
-      onChange,
-      input.parent,
-    ],
+    [input.name, value, loading, error, options, onChange, input.parent],
   );
 }

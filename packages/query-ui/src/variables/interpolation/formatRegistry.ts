@@ -36,7 +36,7 @@ export interface FormatVariable {
   isMulti?: boolean;
   includeAll?: boolean;
 
-  getValue(fieldPath?: string): unknown;
+  getValue(fieldPath?: string, returnLabel?: boolean): unknown;
 }
 
 export const formatRegistry = new Registry<FormatRegistryItem>(() => {
@@ -339,7 +339,7 @@ export const formatRegistry = new Registry<FormatRegistryItem>(() => {
       formatter: (value, _args, variable, fieldPath) => {
         // A field path picks a field of the value itself, so there is no separate text for it
         if (!fieldPath) {
-          const text = variable.getValue('text');
+          const text = variable.getValue(fieldPath, true);
 
           if (text !== undefined && text !== null) {
             return isArray(text) ? text.join(' + ') : String(text);

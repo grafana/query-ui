@@ -23,13 +23,11 @@ export interface VariableValueOption {
 export interface VariableContextState<T = unknown> {
   name: string;
   value: T;
-  /** Whether the value is a list, so formatters join it as one. */
-  isMulti?: boolean;
   options?: VariableValueOption[];
   loading?: boolean;
   error?: Error | null;
   parent?: VariableContextState<unknown> | undefined;
-  getValue(fieldPath?: string): unknown;
+  getValue(fieldPath?: string, returnLabel?: boolean): unknown;
   onOptionsChange(options: VariableValueOption[]): void;
   onChange(value: T): void;
   onSetLoading(loading: boolean): void;
