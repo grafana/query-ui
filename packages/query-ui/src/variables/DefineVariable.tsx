@@ -35,7 +35,7 @@ export function DefineVariable({
     name,
     value: value ?? {},
     options,
-    loading: loading,
+    loading,
     parent: parentContext,
     skipUrlSync,
   });

@@ -14,29 +14,26 @@ function interpolated(page: Page) {
   return page.getByTestId('interpolated');
 }
 
-/** The queries the label variable sent: `__keys`, with any search filter. */
-function labelQueries(page: Page) {
-  return page
-    .getByTestId('variable-queries')
-    .getByRole('listitem')
-    .filter({ hasText: /^__keys/ });
+/** Every variable query the data source received, in order. */
+function variableQueries(page: Page) {
+  return page.getByTestId('variable-queries').getByRole('listitem');
 }
 
 test.describe('query variable', () => {
   test('runs the label query only once its combobox opens', async ({
     page,
   }) => {
-    // A value from the URL is trusted, so the label variable has no need to
-    // query to check it. Without one, it queries on mount to pick a value.
+    // A value from the URL is trusted, so neither variable has to query to
+    // check it. Without one, the label variable queries on mount to pick a value.
     await page.goto('/query-variable-demo?var-label=env&var-labelValue=prod');
 
     await expect(labelInput(page)).toHaveValue('env');
     await expect(interpolated(page)).toHaveText('label=env labelValue=prod');
-    await expect(labelQueries(page)).toHaveCount(0);
+    await expect(variableQueries(page)).toHaveCount(0);
 
     await labelInput(page).click();
 
-    await expect(labelQueries(page)).toHaveText(['__keys']);
+    await expect(variableQueries(page)).toHaveText(['__keys']);
     await expect(page.getByRole('option')).toHaveText([
       'service',
       'env',

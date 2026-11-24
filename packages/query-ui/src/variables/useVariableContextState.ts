@@ -22,6 +22,11 @@ export interface VariableValueStateInput<T extends VariableValueOrValues> {
    * value read from the URL its label. Read once, on mount.
    */
   options?: VariableValueOption[];
+  /**
+   * Whether the variable starts out loading. Left out, it does when it has no
+   * value to start from, once the URL and the cache have been checked. Read
+   * once, on mount.
+   */
   loading?: boolean;
   parent?: VariableContextState<unknown>;
   /**
@@ -71,7 +76,6 @@ export function useVariableContextState<
   });
   const startValue = rememberedValue ?? input.value;
 
-  const [loading, setLoading] = React.useState(input.loading);
   const [options, setOptions] = React.useState<VariableValueOption[]>(
     () => input.options ?? [],
   );
@@ -80,6 +84,9 @@ export function useVariableContextState<
     urlValue === undefined
       ? startValue
       : (fromUrlValue(urlValue, options) as T),
+  );
+  const [loading, setLoading] = React.useState(
+    () => input.loading ?? !hasValue(value),
   );
   const [error, setError] = React.useState<Error | null>(null);
 

@@ -58,7 +58,6 @@ export function QueryVariable({
   const context = useVariableContextState<VariableValueOrValues>({
     name,
     value: initialValue,
-    loading: !hasValue(initialValue),
     parent: parentContext,
     skipUrlSync,
     rememberValue: true,

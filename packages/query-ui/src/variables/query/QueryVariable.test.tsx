@@ -5,6 +5,7 @@ import type { MetricFindValue } from '@grafana/data';
 import { getDataSourceSrv } from '@grafana/runtime';
 
 import { CacheProvider } from '../../caching/CacheContext';
+import { MemoryCache } from '../../caching/MemoryCache';
 import { useVariable } from '../../hooks/useVariable';
 import { TimeRangeContextProvider } from '../../time/TimeRangeContext';
 import { DefineVariable } from '../DefineVariable';
@@ -61,6 +62,7 @@ function Probe({ name }: { name: string }) {
 function renderVariable(
   props: Partial<QueryVariableProps>,
   wrap: (node: React.ReactNode) => React.ReactNode = (node) => node,
+  cache = new MemoryCache(),
 ) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -69,7 +71,7 @@ function renderVariable(
   return render(
     <QueryClientProvider client={queryClient}>
       <TimeRangeContextProvider>
-        <CacheProvider>
+        <CacheProvider cache={cache}>
           {wrap(
             <QueryVariable
               name="test"
@@ -127,6 +129,34 @@ describe('QueryVariable', () => {
 
       expect(screen.getByTestId('loading')).toHaveTextContent('false');
       expect(screen.getByTestId('value')).toHaveTextContent('web');
+      expect(metricFindQuery).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('When the values are remembered', () => {
+    it('Should not run either query of two nested variables', async () => {
+      const cache = new MemoryCache();
+      cache.set('label', { value: 'tier', label: 'tier' });
+      cache.set('test', web);
+
+      renderVariable(
+        { query: '${label}' },
+        (node) => (
+          <QueryVariable
+            name="label"
+            datasource={{ uid: 'legacy' }}
+            query="labels"
+          >
+            {node}
+          </QueryVariable>
+        ),
+        cache,
+      );
+
+      expect(screen.getByTestId('value')).toHaveTextContent('web');
+      expect(screen.getByTestId('loading')).toHaveTextContent('false');
+      // Give a query that should not run the time to start
+      await act(() => new Promise((resolve) => setTimeout(resolve, 10)));
       expect(metricFindQuery).not.toHaveBeenCalled();
     });
   });

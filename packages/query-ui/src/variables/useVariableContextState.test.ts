@@ -238,6 +238,61 @@ describe('useVariableContextState', () => {
     });
   });
 
+  describe('When loading is left out', () => {
+    const empty = { value: '' };
+
+    it('Should start loading when there is no value', () => {
+      const { result } = renderState({ value: empty });
+
+      expect(result.current.variable.loading).toBe(true);
+    });
+
+    it('Should not start loading when there is a value', () => {
+      const { result } = renderState({ value: a });
+
+      expect(result.current.variable.loading).toBe(false);
+    });
+
+    it('Should not start loading with a value from the url', () => {
+      const { result } = renderState({ value: empty }, '/?var-test=a');
+
+      expect(result.current.variable.loading).toBe(false);
+    });
+
+    it('Should not start loading with a remembered value', () => {
+      const cache = new MemoryCache();
+      cache.set('test', b);
+
+      const { result } = renderState(
+        { value: empty, rememberValue: true },
+        '/',
+        cache,
+      );
+
+      expect(result.current.variable.loading).toBe(false);
+    });
+
+    it('Should start loading for an empty list', () => {
+      const { result } = renderState({ value: [] });
+
+      expect(result.current.variable.loading).toBe(true);
+    });
+  });
+
+  describe('When loading is given', () => {
+    it('Should start loading with true, even with a value', () => {
+      const { result } = renderState({ value: a, loading: true });
+
+      expect(result.current.variable.loading).toBe(true);
+    });
+
+    it('Should not start loading with false, even without a value', () => {
+      const { result } = renderState({ value: { value: '' }, loading: false });
+
+      expect(result.current.variable.loading).toBe(false);
+    });
+  });
+
   describe('When the options change', () => {
     it('Should end loading', () => {
       const { result } = renderState({ value: a, loading: true });
