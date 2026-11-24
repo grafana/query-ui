@@ -1,5 +1,7 @@
 import {
   QueryVariable,
+  TimeRangeContextPicker,
+  TimeRangeRefresh,
   useInterpolator,
   VariableValueCombobox,
 } from '@grafana/query-ui';
@@ -22,6 +24,13 @@ function Interpolated() {
   return <div data-testid="interpolated">{values}</div>;
 }
 
+const actions = (
+  <>
+    <TimeRangeContextPicker />
+    <TimeRangeRefresh />
+  </>
+);
+
 /**
  * Two nested single-value query variables against FakeLabeledDataSource. The
  * outer one lists the label names, and the inner one lists the values of the
@@ -35,6 +44,7 @@ export function QueryVariableDemoPage() {
       breadcrumbs={breadcrumbs}
       title="Query variable demo"
       description="Two nested query variables, where the inner query depends on the outer variable. Options load when a combobox opens."
+      actions={actions}
     >
       <QueryVariable name="label" datasource={datasource} query="__keys">
         <QueryVariable

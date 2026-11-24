@@ -73,6 +73,7 @@ export class FakeLabeledDataSource extends DataSourceApi<FakeLabeledQuery> {
     query: string,
     options?: { searchFilter?: string },
   ): Promise<MetricFindValue[]> {
+    console.log('metricFindQuery', query, options);
     await new Promise((resolve) => setTimeout(resolve, 300));
     const search = options?.searchFilter?.toLowerCase() ?? '';
 
