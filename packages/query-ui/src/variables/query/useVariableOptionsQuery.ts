@@ -3,7 +3,7 @@ import {
   useQueryClient,
   type UseQueryResult,
 } from '@tanstack/react-query';
-import { useCallback, useEffect, useId, useRef } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef } from 'react';
 import {
   CoreApp,
   type DataQueryRequest,
@@ -132,15 +132,18 @@ function useOptionsQueryDefinition(props: VariableOptionsQueryProps) {
   const dataSourceSrv = getDataSourceSrv();
   const timeRange = useTimeRange().value;
   const timeRangeKey = `${timeRange.from.valueOf()}-${timeRange.to.valueOf()}`;
-  const usesSearchFilter = containsSearchFilter(query);
+  const queryHasSearchFilter = useMemo(
+    () => containsSearchFilter(query),
+    [query],
+  );
 
   return (rawSearchFilter?: string) => {
     // An empty filter is the same query as no filter
     const search = rawSearchFilter || undefined;
     // A query that can't narrow its results is run without the search, and
     // the search filters its options instead
-    const searchFilter = usesSearchFilter ? search : undefined;
-    const localSearch = usesSearchFilter ? undefined : search;
+    const searchFilter = queryHasSearchFilter ? search : undefined;
+    const localSearch = queryHasSearchFilter ? undefined : search;
 
     return {
       // Regex, sort and static options are applied in `select`, so changing them does not refetch
