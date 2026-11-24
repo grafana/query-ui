@@ -83,7 +83,7 @@ export function useVariableOptionsLoader(
   return useCallback(
     async (searchFilter?: string) => {
       const { select, ...query } = getQueryRef.current(searchFilter);
-      return select(await queryClient.fetchQuery(query));
+      return select(await queryClient.query(query));
     },
     [queryClient],
   );
