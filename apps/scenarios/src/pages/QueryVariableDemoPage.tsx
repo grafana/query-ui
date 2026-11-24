@@ -36,13 +36,21 @@ function VariableQueries() {
   const queries = useFakeVariableQueries();
 
   return (
-    <ul data-testid="variable-queries" aria-label="Variable queries">
-      {queries.map(({ query, searchFilter }, index) => (
-        <li key={index}>
-          {searchFilter ? `${query} (search: ${searchFilter})` : query}
-        </li>
-      ))}
-    </ul>
+    <>
+      <h4>Issued variable queries</h4>
+      <Stack
+        data-testid="variable-queries"
+        aria-label="Variable queries"
+        direction="column"
+        gap={1}
+      >
+        {queries.map(({ query, searchFilter }, index) => (
+          <div key={index}>
+            {searchFilter ? `${query} (search: ${searchFilter})` : query}
+          </div>
+        ))}
+      </Stack>
+    </>
   );
 }
 
