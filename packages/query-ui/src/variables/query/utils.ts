@@ -4,7 +4,9 @@ import {
   VariableSort,
   type VariableRegexApplyTo,
 } from '@grafana/data';
+import type { DataQuery } from '@grafana/schema';
 
+import { SEARCH_FILTER_VARIABLE } from '../constants';
 import type { VariableValueOption } from '../types';
 import type { MetricFindValueWithProperties } from './toMetricFindValues';
 
@@ -106,6 +108,17 @@ export function mergeStaticOptions(
   }
 
   return [...staticOptions, ...unique];
+}
+
+/**
+ * Whether the query references the `__searchFilter` variable, and so can
+ * narrow its results to what the user types. Only such a query is run again
+ * as the search changes.
+ */
+export function containsSearchFilter(query: string | DataQuery): boolean {
+  const text = typeof query === 'string' ? query : JSON.stringify(query);
+
+  return text.includes(SEARCH_FILTER_VARIABLE);
 }
 
 const getAllMatches = (str: string, regex: RegExp): RegExpExecArray[] => {

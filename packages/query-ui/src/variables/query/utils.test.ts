@@ -1,7 +1,11 @@
 import { VariableSort } from '@grafana/data';
 
 import type { VariableValueOption } from '../types';
-import { metricNamesToVariableValues, sortVariableValues } from './utils';
+import {
+  containsSearchFilter,
+  metricNamesToVariableValues,
+  sortVariableValues,
+} from './utils';
 
 describe('metricNamesToVariableValues', () => {
   describe('Basic functionality', () => {
@@ -433,5 +437,23 @@ describe('metricNamesToVariableValues', () => {
         { label: 'Display1a', value: 'val1a' },
       ]);
     });
+  });
+});
+
+describe('containsSearchFilter', () => {
+  it.each([
+    ['label_values($__searchFilter)', true],
+    ['label_values(${__searchFilter})', true],
+    ['label_values(job)', false],
+  ])('should tell whether %s references it', (query, expected) => {
+    expect(containsSearchFilter(query)).toBe(expected);
+  });
+
+  it('should look inside a data query', () => {
+    const withFilter = { refId: 'A', expr: 'up{job=~"$__searchFilter"}' };
+    const withoutFilter = { refId: 'A', expr: 'up' };
+
+    expect(containsSearchFilter(withFilter)).toBe(true);
+    expect(containsSearchFilter(withoutFilter)).toBe(false);
   });
 });

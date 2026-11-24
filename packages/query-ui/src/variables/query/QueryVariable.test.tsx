@@ -29,13 +29,16 @@ const VALUES: Record<string, string[]> = {
   tier: ['web', 'db'],
 };
 
-/** Legacy data source: the query names a label, the search filter narrows its values. */
+/**
+ * Legacy data source: the query names a label, and the search filter narrows
+ * its values. A query can name the filter after the label, as `service $__searchFilter`.
+ */
 const metricFindQuery = vi.fn(
   async (
     query: string,
     options?: { searchFilter?: string },
   ): Promise<MetricFindValue[]> =>
-    (VALUES[query] ?? [])
+    (VALUES[query.split(' ')[0]] ?? [])
       .filter((value) => value.includes(options?.searchFilter ?? ''))
       .map((text) => ({ text })),
 );
@@ -162,15 +165,31 @@ describe('QueryVariable', () => {
   });
 
   describe('When options are loaded on demand', () => {
-    it('Should send the search as the search filter', async () => {
-      renderVariable({ value: web });
+    it('Should send the search as the search filter when the query references it', async () => {
+      renderVariable({ value: web, query: 'service $__searchFilter' });
 
       const options = await act(() => loadOptions!('b'));
 
       expect(options.map((o) => o.value)).toEqual(['web', 'db']);
       expect(metricFindQuery).toHaveBeenCalledWith(
-        'service',
+        'service $__searchFilter',
         expect.objectContaining({ searchFilter: 'b' }),
+      );
+    });
+
+    it('Should filter the options itself when the query does not reference the search filter', async () => {
+      renderVariable({ value: web });
+
+      const options = await act(() => loadOptions!('b'));
+      const moreOptions = await act(() => loadOptions!('a'));
+
+      // Fuzzy searched, so the best match comes first
+      expect(options.map((o) => o.value)).toEqual(['db', 'web']);
+      expect(moreOptions.map((o) => o.value)).toEqual(['api']);
+      expect(metricFindQuery).toHaveBeenCalledTimes(1);
+      expect(metricFindQuery).toHaveBeenCalledWith(
+        'service',
+        expect.objectContaining({ searchFilter: undefined }),
       );
     });
 

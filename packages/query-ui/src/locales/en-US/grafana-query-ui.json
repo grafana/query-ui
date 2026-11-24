@@ -19,6 +19,9 @@
             "values-are-separated-by-character": "Values are separated by | character"
           }
         }
+      },
+      "variable-value-select": {
+        "all-label": "All"
       }
     }
   }
