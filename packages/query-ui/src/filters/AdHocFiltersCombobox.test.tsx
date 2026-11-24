@@ -8,10 +8,8 @@ import { getDataSourceSrv } from '@grafana/runtime';
 import { useAdhocFilters } from '../hooks/useAdhocFilters';
 import { TimeRangeContextProvider } from '../time/TimeRangeContext';
 import { AdHocFiltersCombobox } from './AdHocFiltersCombobox';
-import {
-  type AdHocFilterWithLabels,
-  AdhocFiltersProvider,
-} from './AdhocFiltersContext';
+import { AdhocFiltersProvider } from './AdhocFiltersContext';
+import type { AdHocFilterWithLabels } from './filterModel';
 
 // The real modules pull browser-only code (uplot and friends) into jsdom.
 vi.mock('@grafana/runtime', () => ({

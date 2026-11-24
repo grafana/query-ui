@@ -1,9 +1,9 @@
+import type { EditorStep, FilterDraft } from './editorState';
 import {
   type AdHocFilterWithLabels,
   isMultiValueOperator,
   OPERATORS,
-} from './AdhocFiltersContext';
-import type { EditorStep, FilterDraft } from './editorState';
+} from './filterModel';
 
 export interface ParsedFilterExpression {
   key: string | undefined;

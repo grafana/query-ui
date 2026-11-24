@@ -1,3 +1,4 @@
+export type { AdHocFilterWithLabels } from './filters/filterModel';
 export {
   CacheContext,
   CacheProvider,
@@ -19,7 +20,6 @@ export {
   type AdHocFiltersComboboxProps,
 } from './filters/AdHocFiltersCombobox';
 export {
-  type AdHocFilterWithLabels,
   AdhocFiltersContext,
   type AdhocFiltersContextState,
   AdhocFiltersProvider,

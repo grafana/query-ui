@@ -6,8 +6,8 @@ import { useVariable } from '../hooks/useVariable';
 import { DefineVariable } from '../variables/DefineVariable';
 import type { VariableValue } from '../variables/types';
 import { AdhocFiltersProvider } from './AdhocFiltersContext';
-import type { AdHocFilterWithLabels } from './AdhocFiltersContext';
 import { AdhocFiltersVariable } from './AdhocFiltersVariable';
+import type { AdHocFilterWithLabels } from './filterModel';
 
 function Probe() {
   const { onAddFilter, onUpdateFilter, onRemoveFilter, filters } =
