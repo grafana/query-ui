@@ -19,6 +19,7 @@
       "cache": false
     },
     "e2e": {},
+    "i18n-extract": {},
     "test": {
       "dependsOn": ["^build"],
       "outputs": ["coverage/**"]

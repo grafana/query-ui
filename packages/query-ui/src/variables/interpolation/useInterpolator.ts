@@ -1,10 +1,10 @@
 import React from 'react';
-import type { ScopedVars } from '@grafana/data';
 import { VariableFormatID } from '@grafana/schema';
 
 import { VARIABLE_REGEX } from '../constants';
 import { macrosIndex } from '../macros';
 import {
+  type QueryUIScopedVars,
   VariableContext,
   type InterpolationFormatParameter,
   type VariableContextState,
@@ -25,7 +25,7 @@ import {
  */
 export function useInterpolator(
   input: string,
-  scopedVars?: ScopedVars,
+  scopedVars?: QueryUIScopedVars,
   format?: InterpolationFormatParameter,
 ): [string, boolean] {
   const context = React.useContext(VariableContext);
@@ -35,10 +35,10 @@ export function useInterpolator(
   }, [input, context, scopedVars, format]);
 }
 
-function interpolate(
+export function interpolate(
   target: string,
   context: VariableContextState<unknown> | undefined,
-  scopedVars?: ScopedVars,
+  scopedVars?: QueryUIScopedVars,
   format?: InterpolationFormatParameter,
 ): [string, boolean] {
   VARIABLE_REGEX.lastIndex = 0;

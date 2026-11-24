@@ -5,8 +5,8 @@ import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import { UrlStateProvider } from '../url/UrlStateContext';
 import { DefineVariable } from './DefineVariable';
 import { useInterpolator } from './interpolation/useInterpolator';
+import { VariableTestQuery } from './testquery/VariableTestQuery';
 import { VariableContext } from './types';
-import { VariableTestQuery } from './VariableTestQuery';
 
 describe('TestVariable', () => {
   it('Simple static variable', () => {

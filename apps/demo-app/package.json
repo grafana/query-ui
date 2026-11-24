@@ -73,7 +73,6 @@
     "@grafana/data": "^13.2.0",
     "@grafana/i18n": "^13.2.0",
     "@grafana/runtime": "^13.2.0",
-    "@grafana/scenes": "^7.0.0",
     "@grafana/query-ui": "workspace:*",
     "@grafana/schema": "^13.2.0",
     "@grafana/ui": "^13.2.0",

@@ -1,4 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
+import { createElement, type ReactNode } from 'react';
 import {
   createTheme,
   FieldType,
@@ -11,6 +12,7 @@ import {
 import { getPluginImportUtils } from '@grafana/runtime';
 import { SeriesVisibilityChangeMode } from '@grafana/ui';
 
+import { TimeRangeContextProvider } from '../../time/TimeRangeContext';
 import type { VizConfig } from './PanelBuilders/types';
 import { usePanelContextState } from './usePanelContextState';
 import { useVizPanel } from './useVizPanel';
@@ -50,18 +52,31 @@ const data: PanelData = {
   ],
 };
 
-function renderPanel() {
-  return renderHook(() => {
-    const panel = useVizPanel({ vizConfig, data });
-    const context = usePanelContextState({
-      fieldConfig: panel.fieldConfig,
-      options: panel.panelOptions,
-      frames: panel.panelData.series,
-      onFieldConfigChange: panel.onFieldConfigChange,
-      onOptionsChange: panel.onOptionsChange,
-    });
-    return { panel, context };
+// useVizPanel requires a time range provider above it
+function TimeRangeWrapper({ children }: { children: ReactNode }) {
+  return createElement(TimeRangeContextProvider, {
+    initFrom: 'now-6h',
+    initTo: 'now',
+    timeZone: 'utc',
+    children,
   });
+}
+
+function renderPanel() {
+  return renderHook(
+    () => {
+      const panel = useVizPanel({ vizConfig, data });
+      const context = usePanelContextState({
+        fieldConfig: panel.fieldConfig,
+        options: panel.panelOptions,
+        frames: panel.panelData.series,
+        onFieldConfigChange: panel.onFieldConfigChange,
+        onOptionsChange: panel.onOptionsChange,
+      });
+      return { panel, context };
+    },
+    { wrapper: TimeRangeWrapper },
+  );
 }
 
 describe('usePanelContextState', () => {
