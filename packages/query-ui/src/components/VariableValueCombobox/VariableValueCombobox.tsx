@@ -34,6 +34,8 @@ export function VariableValueCombobox({ name }: VariableValueComboboxProps) {
         loading={variable.loading}
         value={value}
         options={options}
+        width="auto"
+        minWidth={20}
         onChange={onChange}
       />
     </Field>

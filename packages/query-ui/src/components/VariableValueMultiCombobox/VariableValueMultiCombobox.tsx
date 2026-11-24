@@ -38,6 +38,8 @@ export function VariableValueMultiCombobox({
         loading={variable.loading}
         value={value}
         options={options}
+        width="auto"
+        minWidth={25}
         onChange={onChange}
       />
     </Field>
