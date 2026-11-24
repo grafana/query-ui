@@ -9,6 +9,7 @@ import { ManySeriesDemoPage } from './pages/ManySeriesDemoPage';
 import { PanelGridLayoutDemoPage } from './pages/PanelGridLayoutDemoPage';
 import { SinglePanelDemoPage } from './pages/SinglePanelDemoPage';
 import { SlowQueryDemoPage } from './pages/SlowQueryDemoPage';
+import { VariablesDemoPage } from './pages/VariablesDemoPage';
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ export function App() {
                 path="/many-series-demo"
                 element={<ManySeriesDemoPage />}
               />
+              <Route path="/variables-demo" element={<VariablesDemoPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </TimeRangeContextProvider>

@@ -1,15 +1,10 @@
 import { render, screen } from '@testing-library/react';
-import React, { useContext } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { VariableFormatID } from '@grafana/schema';
 
 import { DefineVariable } from '../DefineVariable';
 import { ObjectVariable } from '../ObjectVariable';
-import {
-  type InterpolationFormatParameter,
-  VariableContext,
-  type VariableContextState,
-} from '../types';
+import type { InterpolationFormatParameter } from '../types';
 import { useInterpolator } from './useInterpolator';
 
 describe('useInterpolator', () => {
@@ -63,24 +58,30 @@ describe('useInterpolator', () => {
 
   it('can format multi valued values', () => {
     render(
-      <TestVariable name="test" value={['hello', 'world']}>
+      <DefineVariable
+        name="test"
+        value={[{ value: 'hello' }, { value: 'world' }]}
+      >
         <Interpolate id="glob" expr="test.${test}.asd" />
-        <Interpolate id="index" expr="test.${test.1}.asd" />
-      </TestVariable>,
+      </DefineVariable>,
     );
 
     expect(screen.getByTestId('glob')).toHaveTextContent(
       'test.{hello,world}.asd',
     );
-    // Can use fieldPath index to access specific array value
-    expect(screen.getByTestId('index')).toHaveTextContent('test.world.asd');
   });
 
   it('can format multi valued values using the text format', () => {
     render(
-      <TestVariable name="test" value={['1', '2']} text={['hello', 'world']}>
+      <DefineVariable
+        name="test"
+        value={[
+          { value: '1', label: 'hello' },
+          { value: '2', label: 'world' },
+        ]}
+      >
         <Interpolate id="expr" expr="${test:text}" />
-      </TestVariable>,
+      </DefineVariable>,
     );
 
     expect(screen.getByTestId('expr')).toHaveTextContent('hello + world');
@@ -88,13 +89,16 @@ describe('useInterpolator', () => {
 
   it('can format multi valued values with the csv, json, pipe and singlequote formats', () => {
     render(
-      <TestVariable name="env" value={['prod', 'staging']}>
+      <DefineVariable
+        name="env"
+        value={[{ value: 'prod' }, { value: 'staging' }]}
+      >
         <Interpolate id="csv" expr="${env:csv}" />
         <Interpolate id="json" expr="${env:json}" />
         <Interpolate id="pipe" expr="${env:pipe}" />
         <Interpolate id="singlequote" expr="${env:singlequote}" />
         <Interpolate id="legacy" expr="[[env:pipe]]" />
-      </TestVariable>,
+      </DefineVariable>,
     );
 
     expect(screen.getByTestId('csv')).toHaveTextContent('prod,staging');
@@ -108,9 +112,9 @@ describe('useInterpolator', () => {
 
   it('can use formats with arguments', () => {
     render(
-      <TestVariable name="test" value={1594671549254}>
+      <DefineVariable name="test" value={{ value: 1594671549254 }}>
         <Interpolate id="expr" expr="${test:date:YYYY-MM}" />
-      </TestVariable>,
+      </DefineVariable>,
     );
 
     expect(screen.getByTestId('expr')).toHaveTextContent('2020-07');
@@ -118,13 +122,13 @@ describe('useInterpolator', () => {
 
   it('applies the format argument to expressions without a format of their own', () => {
     render(
-      <TestVariable name="test" value={['a.b', 'c']}>
+      <DefineVariable name="test" value={[{ value: 'a.b' }, { value: 'c' }]}>
         <Interpolate
           id="expr"
           expr="$test ${test:csv}"
           format={VariableFormatID.Regex}
         />
-      </TestVariable>,
+      </DefineVariable>,
     );
 
     expect(screen.getByTestId('expr')).toHaveTextContent('(a\\.b|c) a.b,c');
@@ -134,34 +138,23 @@ describe('useInterpolator', () => {
     const formatter = vi.fn().mockReturnValue('custom');
 
     render(
-      <TestVariable
-        name="cluster"
-        value={['1', '2']}
-        type="custom"
-        isMulti
-        includeAll
-      >
+      <DefineVariable name="cluster" value={[{ value: '1' }, { value: '2' }]}>
         <Interpolate id="expr" expr="$cluster" format={formatter} />
-      </TestVariable>,
+      </DefineVariable>,
     );
 
     expect(screen.getByTestId('expr')).toHaveTextContent('custom');
     expect(formatter.mock.calls[0][0]).toEqual(['1', '2']);
-    expect(formatter.mock.calls[0][1]).toEqual({
-      name: 'cluster',
-      type: 'custom',
-      multi: true,
-      includeAll: true,
-    });
+    expect(formatter.mock.calls[0][1]).toEqual({ name: 'cluster' });
   });
 
   it('falls back to the glob format for an unknown format', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     render(
-      <TestVariable name="test" value={['a', 'b']}>
+      <DefineVariable name="test" value={[{ value: 'a' }, { value: 'b' }]}>
         <Interpolate id="expr" expr="${test:nope}" />
-      </TestVariable>,
+      </DefineVariable>,
     );
 
     expect(screen.getByTestId('expr')).toHaveTextContent('{a,b}');
@@ -172,9 +165,9 @@ describe('useInterpolator', () => {
 
   it('keeps falsy values like 0', () => {
     render(
-      <TestVariable name="test" value={0}>
+      <DefineVariable name="test" value={{ value: 0 }}>
         <Interpolate id="expr" expr="value=${test}" />
-      </TestVariable>,
+      </DefineVariable>,
     );
 
     expect(screen.getByTestId('expr')).toHaveTextContent('value=0');
@@ -194,13 +187,13 @@ describe('useInterpolator', () => {
     render(
       <DefineVariable name="simple" value={{ value: 'hello' }}>
         <ObjectVariable name="obj" value={{ prop1: 'prop1Value' }}>
-          <TestVariable name="arr" value={['a', 'b']}>
+          <DefineVariable name="arr" value={[{ value: 'a' }, { value: 'b' }]}>
             <Interpolate id="dollar" expr="$simple" />
             <Interpolate id="brackets" expr="[[simple]]" />
             <Interpolate id="braces" expr="${simple}" />
             <Interpolate id="field" expr="${obj.prop1}" />
             <Interpolate id="index" expr="${arr.1}" />
-          </TestVariable>
+          </DefineVariable>
         </ObjectVariable>
       </DefineVariable>,
     );
@@ -225,55 +218,4 @@ function Interpolate({
   const [value] = useInterpolator(expr, undefined, format);
 
   return <div data-testid={id}>{value}</div>;
-}
-
-interface TestVariableProps {
-  name: string;
-  value: unknown;
-  text?: unknown;
-  type?: string;
-  isMulti?: boolean;
-  includeAll?: boolean;
-  children: React.ReactNode;
-}
-
-/**
- * A variable with a fixed value, which can also hold several values. `text`
- * answers the `text` field path, and an index picks one of several values.
- */
-function TestVariable({
-  name,
-  value,
-  text,
-  children,
-  ...rest
-}: TestVariableProps) {
-  const parent = useContext(VariableContext);
-  const context: VariableContextState & Record<string, unknown> = {
-    ...rest,
-    name,
-    value,
-    parent,
-    getValue: (fieldPath) => {
-      if (fieldPath === 'text') {
-        return text;
-      }
-
-      if (fieldPath !== undefined && Array.isArray(value)) {
-        return value[Number(fieldPath)];
-      }
-
-      return value;
-    },
-    onChange: () => {},
-    onOptionsChange: () => {},
-    onSetLoading: () => {},
-    onSetError: () => {},
-  };
-
-  return (
-    <VariableContext.Provider value={context}>
-      {children}
-    </VariableContext.Provider>
-  );
 }

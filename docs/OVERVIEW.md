@@ -88,7 +88,7 @@ Multiple variables are nested contexts. Each provider keeps a `parent` reference
 <DataSourceVariable name="ds" pluginId="prometheus">
   <DefineVariable name="service" value={{ value: 'api' }}>
     <DefineVariable name="pod" value={{ value: 'api-1' }}>
-      <VariableValueSelect name="service" />
+      <VariableValueCombobox name="service" />
       <Panels />
     </DefineVariable>
   </DefineVariable>
@@ -98,6 +98,8 @@ Multiple variables are nested contexts. Each provider keeps a `parent` reference
 Because nesting defines scope, a variable sees only the variables above it. `DataSourceVariable` interpolates its `regex` prop against its parent, so the regex can reference variables defined above it.
 
 `useVariable(name)` returns the variable's state and setters (`onChange`, `onOptionsChange`, `onSetLoading`, `onSetError`). Values sync to the `var-<name>` query parameter unless the variable sets `skipUrlSync`.
+
+Give `DefineVariable` a list as its `value` (even an empty one) to make it a multi-value variable. Its value is then always a list of `VariableValue`, it syncs to one parameter per value (`?var-pod=a&var-pod=b`), and formatters join the values (`${pod:csv}` gives `a,b`).
 
 #### Interpolation
 

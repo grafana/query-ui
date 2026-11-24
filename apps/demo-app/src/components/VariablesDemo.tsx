@@ -3,8 +3,10 @@ import {
   useInterpolator,
   useDataQuery,
   VizPanel,
-  VariableValueSelect,
+  VariableValueCombobox,
+  VariableValueMultiCombobox,
   VariableTestQuery,
+  GridPanelLayout,
 } from '@grafana/query-ui';
 import { Stack } from '@grafana/ui';
 import React from 'react';
@@ -12,18 +14,36 @@ import React from 'react';
 import { PageWrapper } from './PageWrapper';
 import { plainTimeSeriesGraph } from './sharedVisualizations';
 
+const podOptions = [
+  { value: 'pod1', label: 'Pod 1' },
+  { value: 'pod2', label: 'Pod 2' },
+  { value: 'pod3', label: 'Pod 3' },
+];
+
 export function VariablesDemo() {
   return (
     <PageWrapper title="Variables demo">
       <DefineVariable name="service" loading={true}>
         <VariableTestQuery name="service" query="A.*" delay={2000} />
-        <PrintVariable />
+        <DefineVariable name="pod" value={podOptions.slice(0, 2)} options={podOptions}>
+          <div>
+            <Stack direction="column" gap={3}>
+              <Stack>
+                <VariableValueCombobox name="service" />
+                <VariableValueMultiCombobox name="pod" />
+              </Stack>
+              <GridPanelLayout>
+                <RenderPanel />
+              </GridPanelLayout>
+            </Stack>
+          </div>
+        </DefineVariable>
       </DefineVariable>
     </PageWrapper>
   );
 }
 
-const PrintVariable = React.memo(function PrintVariable() {
+const RenderPanel = React.memo(function RenderPanel() {
   const [alias, loading] = useInterpolator('service=${service} pod=${pod}');
   const data = useDataQuery({
     enabled: !loading,
@@ -38,16 +58,5 @@ const PrintVariable = React.memo(function PrintVariable() {
     maxDataPoints: 30,
   });
 
-  return (
-    <div>
-      <Stack direction="column" gap={3}>
-        <Stack justifyContent={'space-between'}>
-          <VariableValueSelect name="service" />
-        </Stack>
-        <div style={{ height: 400 }}>
-          <VizPanel title="Test graph" vizConfig={plainTimeSeriesGraph} data={data.data} />
-        </div>
-      </Stack>
-    </div>
-  );
+  return <VizPanel title="Test graph" vizConfig={plainTimeSeriesGraph} data={data.data} />;
 });

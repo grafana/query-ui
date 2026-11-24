@@ -1,5 +1,5 @@
 import {
-  VariableValueSelect,
+  VariableValueCombobox,
   DataSourceVariable,
   DefineVariable,
   useVariable,
@@ -43,7 +43,7 @@ export function DrilldownMetrics() {
             <DefineVariable name={VAR_METRIC}>
               <Stack direction="column" gap={2}>
                 <Stack alignItems="flex-end">
-                  <VariableValueSelect name="ds" />
+                  <VariableValueCombobox name="ds" />
                   <Field label="Filters" noMargin>
                     <AdHocFiltersCombobox />
                   </Field>

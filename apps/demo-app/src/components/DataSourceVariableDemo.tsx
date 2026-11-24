@@ -1,4 +1,4 @@
-import { useInterpolator, useDataQuery, VizPanel, VariableValueSelect, DataSourceVariable } from '@grafana/query-ui';
+import { useInterpolator, useDataQuery, VizPanel, VariableValueCombobox, DataSourceVariable } from '@grafana/query-ui';
 import { Stack } from '@grafana/ui';
 import React from 'react';
 
@@ -34,7 +34,7 @@ const QueryAndGraph = React.memo(function QueryAndGraph() {
     <div>
       <Stack direction="column" gap={3}>
         <Stack justifyContent={'space-between'}>
-          <VariableValueSelect name="ds" />
+          <VariableValueCombobox name="ds" />
         </Stack>
         <div style={{ height: 400 }}>
           <VizPanel title="Test graph" vizConfig={plainTimeSeriesGraph} data={data.data} />

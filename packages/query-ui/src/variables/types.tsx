@@ -7,6 +7,12 @@ export type VariableValue = {
   properties?: Record<string, unknown>;
 };
 
+/**
+ * What a variable that takes values can hold: one value, or a list of them for
+ * a multi-value variable.
+ */
+export type VariableValueOrValues = VariableValue | VariableValue[];
+
 export interface VariableValueOption {
   label: string;
   value: string | number | boolean;
@@ -21,7 +27,7 @@ export interface VariableContextState<T = unknown> {
   loading?: boolean;
   error?: Error | null;
   parent?: VariableContextState<unknown> | undefined;
-  getValue(fieldPath?: string): unknown;
+  getValue(fieldPath?: string, returnLabel?: boolean): unknown;
   onOptionsChange(options: VariableValueOption[]): void;
   onChange(value: T): void;
   onSetLoading(loading: boolean): void;
