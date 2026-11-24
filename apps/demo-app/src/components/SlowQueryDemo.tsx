@@ -15,7 +15,7 @@ import { plainTimeSeriesGraph } from './sharedVisualizations';
 export function SlowQueryDemo() {
   return (
     <PageWrapper title="Slow query demo">
-      <DataSourceVariable name="ds" loading={true} pluginId="grafana-testdata-datasource">
+      <DataSourceVariable name="ds" pluginId="grafana-testdata-datasource">
         <Stack direction="column" gap={3}>
           <Stack justifyContent={'space-between'}>
             <VariableValueCombobox name="ds" />

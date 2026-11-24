@@ -14,9 +14,10 @@ export interface VariableValueStateInput<T extends VariableValueOrValues> {
   /**
    * The value to start with. A list makes this a multi-value variable, which
    * syncs to one `var-<name>` query parameter per value. Whether it is a list
-   * is read once, on mount.
+   * is read once, on mount. Left out, the variable starts with no value, as a
+   * single-value variable.
    */
-  value: T;
+  value?: T;
   /**
    * The options to start with, until a query replaces them. They also give a
    * value read from the URL its label. Read once, on mount.
@@ -74,7 +75,8 @@ export function useVariableContextState<
       ? remembered
       : undefined;
   });
-  const startValue = rememberedValue ?? input.value;
+  const startValue =
+    rememberedValue ?? input.value ?? ({ value: '', label: '' } as T);
 
   const [options, setOptions] = React.useState<VariableValueOption[]>(
     () => input.options ?? [],
