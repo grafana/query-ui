@@ -57,18 +57,12 @@ export function interpolate(
           loading = true;
         }
 
-        const value = formatValue(
+        return formatValue(
           variable,
           variable.getValue(fieldPath),
           fmt,
           fieldPath,
         );
-
-        console.log(
-          `useInterpolator: variable=${variableName}, loading=${loading}`,
-        );
-
-        return value;
       }
 
       if (macrosIndex.get(variableName)) {
