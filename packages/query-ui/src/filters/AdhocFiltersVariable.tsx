@@ -1,8 +1,8 @@
 import React, { useContext, useEffect } from 'react';
 
 import { useAdhocFilters } from '../hooks/useAdhocFilters';
-import { useVariableContextState } from '../variables/DefineVariable';
 import { VariableContext } from '../variables/types';
+import { useVariableContextState } from '../variables/useVariableContextState';
 import { renderPrometheusLabelFilters } from './utils';
 
 export interface AdhocFiltersVariableProps {

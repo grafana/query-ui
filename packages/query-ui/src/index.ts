@@ -75,6 +75,7 @@ export {
   useVariableOptionsLoader,
   useVariableOptionsQuery,
   type VariableOptionsQueryProps,
+  type VariableQueryDefinition,
 } from './variables/query/useVariableOptionsQuery';
 export { VariableTestQuery } from './variables/testquery/VariableTestQuery';
 export {

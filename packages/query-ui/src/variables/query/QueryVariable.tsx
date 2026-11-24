@@ -1,20 +1,19 @@
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import type { VariableRegexApplyTo, VariableSort } from '@grafana/data';
-import type { DataQuery } from '@grafana/schema';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 
 import { useCache } from '../../caching/CacheContext';
-import { useVariableContextState } from '../DefineVariable';
 import { useInterpolator } from '../interpolation/useInterpolator';
+import { VariableContext, type VariableValueOrValues } from '../types';
+import { useVariableContextState } from '../useVariableContextState';
 import {
-  VariableContext,
-  type VariableValue,
-  type VariableValueOption,
-  type VariableValueOrValues,
-} from '../types';
-import { useVariableOptionsLoader } from './useVariableOptionsQuery';
-import type { StaticOptionsOrder } from './utils';
+  useVariableOptionsLoader,
+  type VariableQueryDefinition,
+} from './useVariableOptionsQuery';
 
-export interface QueryVariableProps {
+/**
+ * The data source uid, a string query and the regex can reference variables
+ * defined above this one.
+ */
+export interface QueryVariableProps extends VariableQueryDefinition {
   name: string;
   /**
    * Initial value. Pass an array, even an empty one, to make this a
@@ -22,19 +21,6 @@ export interface QueryVariableProps {
    * earlier mount of a variable with the same `name`, wins over this one.
    */
   value?: VariableValueOrValues;
-  /** Data source to run the query against. The uid can reference other variables. */
-  datasource: { uid: string };
-  /** The variable query. A string query can reference other variables. */
-  query: string | DataQuery;
-  /** Filters the query results. Can reference other variables. */
-  regex?: string;
-  /** What the regex is matched against. Defaults to `value`. */
-  regexApplyTo?: VariableRegexApplyTo;
-  sort?: VariableSort;
-  /** Added to the options returned by the query. */
-  staticOptions?: VariableValueOption[];
-  /** Where static options go relative to the query results. Defaults to `before`. */
-  staticOptionsOrder?: StaticOptionsOrder;
   /**
    * Keeps the selection out of the URL. By default it is synced to the
    * `var-<name>` query parameter.
@@ -89,7 +75,7 @@ export function QueryVariable({
   });
 
   const currentValue = context.value;
-  const { onChange, onOptionsChange, onSetLoading, onSetError } = context;
+  const { onOptionsChange, onSetLoading, onSetError } = context;
 
   // Remember the selection under the variable name, so a remount picks it up
   useEffect(() => {
@@ -99,7 +85,7 @@ export function QueryVariable({
   }, [cache, name, currentValue]);
 
   // Interpolated against the parent context, so they can reference variables defined above this one
-  const [uid, uidLoading] = useInterpolator(datasource.uid);
+  const [uid, uidLoading] = useInterpolator(datasource.uid ?? '');
   const [stringQuery, queryLoading] = useInterpolator(
     typeof query === 'string' ? query : '',
   );
@@ -135,13 +121,7 @@ export function QueryVariable({
   );
   const loadOptions = useVariableOptionsLoader(queryProps);
 
-  // Read the latest value when the options resolve, without re-running the check on every value change
-  const valueRef = useRef(currentValue);
-  useEffect(() => {
-    valueRef.current = currentValue;
-  }, [currentValue]);
-
-  // Keep the value when it is one of the options, otherwise select the first option
+  // Handing the options over checks the value against them and ends loading
   useEffect(() => {
     // Wait for the variables the query depends on
     if (dependenciesLoading) {
@@ -164,11 +144,6 @@ export function QueryVariable({
         }
 
         onOptionsChange(options);
-        const current = valueRef.current;
-        const validated = validateValue(current, options);
-        if (!sameValue(validated, current)) {
-          onChange(validated);
-        }
         onSetError(null);
         setCheckedKey(dependenciesKey);
       })
@@ -189,7 +164,6 @@ export function QueryVariable({
     dependenciesKey,
     dependenciesLoading,
     loadOptions,
-    onChange,
     onOptionsChange,
     onSetError,
     onSetLoading,
@@ -205,53 +179,6 @@ export function QueryVariable({
       {children}
     </VariableContext.Provider>
   );
-}
-
-/**
- * Keeps the current value when it is one of the options, with the option's
- * label, otherwise picks the first option. A list keeps the values that are
- * options, and gets the first option when none are.
- */
-function validateValue(
-  current: VariableValueOrValues,
-  options: VariableValueOption[],
-): VariableValueOrValues {
-  const findOption = (item: VariableValue) =>
-    options.find((option) => String(option.value) === String(item.value));
-  const first = options[0];
-
-  if (Array.isArray(current)) {
-    const kept = current.flatMap((item) => {
-      const option = findOption(item);
-      return option ? [toValue(option)] : [];
-    });
-
-    if (kept.length > 0 || !first) {
-      return kept;
-    }
-
-    return [toValue(first)];
-  }
-
-  const selected = findOption(current) ?? first;
-
-  return selected ? toValue(selected) : { value: '', label: '' };
-}
-
-function toValue(option: VariableValueOption): VariableValue {
-  return { value: option.value, label: option.label };
-}
-
-function sameValue(a: VariableValueOrValues, b: VariableValueOrValues) {
-  const pairs = (value: VariableValueOrValues) =>
-    JSON.stringify(
-      (Array.isArray(value) ? value : [value]).map((item) => [
-        item.value,
-        item.label,
-      ]),
-    );
-
-  return Array.isArray(a) === Array.isArray(b) && pairs(a) === pairs(b);
 }
 
 function hasValue(value: VariableValueOrValues) {

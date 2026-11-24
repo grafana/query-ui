@@ -12,7 +12,7 @@ import {
   type VariableRegexApplyTo,
 } from '@grafana/data';
 import { getDataSourceSrv } from '@grafana/runtime';
-import type { DataQuery } from '@grafana/schema';
+import type { DataQuery, DataSourceRef } from '@grafana/schema';
 
 import { useTimeRange } from '../../hooks/useTimeRange';
 import type { VariableValueOption } from '../types';
@@ -28,14 +28,16 @@ import {
   type StaticOptionsOrder,
 } from './utils';
 
-export interface VariableOptionsQueryProps {
-  /** Set to false to hold the query, for example while the data source uid is still being interpolated. */
-  enabled?: boolean;
-  datasource: { uid: string };
+/**
+ * Where a variable's options come from, and how the query results are turned
+ * into options.
+ */
+export interface VariableQueryDefinition {
+  /** Data source to run the query against. */
+  datasource: DataSourceRef;
+  /** The variable query. */
   query: string | DataQuery;
-  /** Variable name. Used for default refIds and sent to legacy data sources. */
-  name?: string;
-  /** Filters the query results. Interpolate variables before passing it in. */
+  /** Filters the query results. */
   regex?: string;
   /** What the regex is matched against. Defaults to `value`. */
   regexApplyTo?: VariableRegexApplyTo;
@@ -44,6 +46,17 @@ export interface VariableOptionsQueryProps {
   staticOptions?: VariableValueOption[];
   /** Where static options go relative to the query results. Defaults to `before`. */
   staticOptionsOrder?: StaticOptionsOrder;
+}
+
+/**
+ * Interpolate variables in the data source uid, query and regex before
+ * passing them in.
+ */
+export interface VariableOptionsQueryProps extends VariableQueryDefinition {
+  /** Set to false to hold the query, for example while the data source uid is still being interpolated. */
+  enabled?: boolean;
+  /** Variable name. Used for default refIds and sent to legacy data sources. */
+  name?: string;
   /** Sent to the data source as the `__searchFilter` variable. Debounce it before passing it in. */
   searchFilter?: string;
   staleTime?: number;
@@ -108,7 +121,6 @@ function useOptionsQueryDefinition(props: VariableOptionsQueryProps) {
   const requestId = useId();
   const dataSourceSrv = getDataSourceSrv();
   const timeRange = useTimeRange().value;
-
   const timeRangeKey = `${timeRange.from.valueOf()}-${timeRange.to.valueOf()}`;
 
   return (rawSearchFilter?: string) => {

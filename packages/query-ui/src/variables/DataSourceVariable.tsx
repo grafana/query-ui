@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { stringToJsRegex } from '@grafana/data';
 import {
   getDataSourceInstanceList,
@@ -6,7 +6,6 @@ import {
 } from '@grafana/plugin-compat/datasources';
 
 import { useCache } from '../caching/CacheContext';
-import { useVariableContextState } from './DefineVariable';
 import { useInterpolator } from './interpolation/useInterpolator';
 import {
   VariableContext,
@@ -14,6 +13,7 @@ import {
   type VariableValue,
   type VariableValueOption,
 } from './types';
+import { useVariableContextState } from './useVariableContextState';
 
 export const DATA_SOURCE_DEFAULT_OPTION_VALUE = 'default';
 export const NO_DATA_SOURCES_FOUND_ERROR = 'No data sources found';
@@ -126,19 +126,12 @@ function useDataSourceOptions(
     defaultOptionEnabled,
   }: DataSourceOptionsArgs,
 ) {
-  const { onChange, onOptionsChange, onSetLoading, onSetError } = context;
-
-  // Read the latest value when options resolve without re-running the effect on every value change
-  // (declared before the loading effect so it runs first)
-  const valueRef = useRef(context.value);
-  useEffect(() => {
-    valueRef.current = context.value;
-  }, [context.value]);
+  const { onOptionsChange, onSetLoading, onSetError } = context;
 
   useEffect(() => {
+    // Handing the options over checks the value against them and ends loading
     if (!pluginId) {
       onOptionsChange([]);
-      onSetLoading(false);
       return;
     }
 
@@ -158,11 +151,9 @@ function useDataSourceOptions(
         }
 
         onOptionsChange(options);
-        onChange(validateValue(valueRef.current, options));
         onSetError(
           options.length === 0 ? new Error(NO_DATA_SOURCES_FOUND_ERROR) : null,
         );
-        onSetLoading(false);
       })
       .catch((err: unknown) => {
         if (cancelled) {
@@ -181,7 +172,6 @@ function useDataSourceOptions(
     regex,
     regexLoading,
     defaultOptionEnabled,
-    onChange,
     onOptionsChange,
     onSetLoading,
     onSetError,
@@ -232,23 +222,6 @@ export async function getDataSourceOptions({
   }
 
   return options;
-}
-
-/**
- * Keeps the current value when it is one of the options, otherwise picks the first option.
- */
-function validateValue(
-  current: VariableValue,
-  options: VariableValueOption[],
-): VariableValue {
-  const match = options.find((option) => option.value === current.value);
-  const selected = match ?? options[0];
-
-  if (!selected) {
-    return { value: '', label: '' };
-  }
-
-  return { value: selected.value, label: selected.label };
 }
 
 function matches(name: string, regex?: RegExp) {
