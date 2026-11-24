@@ -1,11 +1,10 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { stringToJsRegex } from '@grafana/data';
 import {
   getDataSourceInstanceList,
   getDefaultDataSourceInstanceListItem,
 } from '@grafana/plugin-compat/datasources';
 
-import { useCache } from '../caching/CacheContext';
 import { useInterpolator } from './interpolation/useInterpolator';
 import {
   VariableContext,
@@ -63,35 +62,15 @@ export function DataSourceVariable({
   children,
 }: DataSourceVariableProps) {
   const parentContext = useContext(VariableContext);
-  const cache = useCache();
-
-  // Read once: the state below only takes its initial value from this on mount
-  const [cachedValue] = useState(() => cache.get<VariableValue>(name));
-  const initialValue = cachedValue ?? {
-    value: value ?? '',
-    label: value ?? '',
-  };
 
   const context = useVariableContextState({
     name,
-    value: initialValue,
+    value: { value: value ?? '', label: value ?? '' },
     loading: loading,
     parent: parentContext,
     skipUrlSync,
+    rememberValue: true,
   });
-
-  // Remember every selection under the variable name, whether it came from the options
-  // resolving or from the user, so a remount picks up where this one left off. The closest
-  // cache from `CacheContext` holds it; give a subtree its own `CacheProvider` to scope it.
-  const currentValue = context.value;
-  useEffect(() => {
-    // Nothing selected yet, or no options to select from
-    if (currentValue.value === undefined || currentValue.value === '') {
-      return;
-    }
-
-    cache.set<VariableValue>(name, currentValue);
-  }, [cache, name, currentValue]);
 
   // Interpolated against the parent context, so the regex can reference variables defined above this one
   const [interpolatedRegex, regexLoading] = useInterpolator(regex);

@@ -1,9 +1,8 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 
-import { useCache } from '../../caching/CacheContext';
 import { useInterpolator } from '../interpolation/useInterpolator';
 import { VariableContext, type VariableValueOrValues } from '../types';
-import { useVariableContextState } from '../useVariableContextState';
+import { hasValue, useVariableContextState } from '../useVariableContextState';
 import {
   useVariableOptionsLoader,
   type VariableQueryDefinition,
@@ -54,35 +53,19 @@ export function QueryVariable({
   children,
 }: QueryVariableProps) {
   const parentContext = useContext(VariableContext);
-  const cache = useCache();
-
-  // Read once: the state below only takes its initial value from this on mount
-  const [cachedValue] = useState(() => cache.get<VariableValueOrValues>(name));
   const initialValue = value ?? {};
-  // A remembered value only counts when it is single or multi like this one
-  const startValue =
-    cachedValue !== undefined &&
-    Array.isArray(cachedValue) === Array.isArray(initialValue)
-      ? cachedValue
-      : initialValue;
 
   const context = useVariableContextState<VariableValueOrValues>({
     name,
-    value: startValue,
-    loading: !hasValue(startValue),
+    value: initialValue,
+    loading: !hasValue(initialValue),
     parent: parentContext,
     skipUrlSync,
+    rememberValue: true,
   });
 
   const currentValue = context.value;
   const { onOptionsChange, onSetLoading, onSetError } = context;
-
-  // Remember the selection under the variable name, so a remount picks it up
-  useEffect(() => {
-    if (hasValue(currentValue)) {
-      cache.set<VariableValueOrValues>(name, currentValue);
-    }
-  }, [cache, name, currentValue]);
 
   // Interpolated against the parent context, so they can reference variables defined above this one
   const [uid, uidLoading] = useInterpolator(datasource.uid ?? '');
@@ -179,12 +162,4 @@ export function QueryVariable({
       {children}
     </VariableContext.Provider>
   );
-}
-
-function hasValue(value: VariableValueOrValues) {
-  if (Array.isArray(value)) {
-    return value.some(hasValue);
-  }
-
-  return value.value !== undefined && value.value !== '';
 }

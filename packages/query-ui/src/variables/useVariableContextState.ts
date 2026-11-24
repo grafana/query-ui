@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { useCache } from '../caching/CacheContext';
 import { useUrlState, type UrlValue } from '../url/UrlStateContext';
 import type {
   VariableContextState,
@@ -28,6 +29,14 @@ export interface VariableValueStateInput<T extends VariableValueOrValues> {
    * query parameter. Set it for the life of the variable.
    */
   skipUrlSync?: boolean;
+  /**
+   * Remembers the value under the variable name, so a later mount of a variable
+   * with the same `name` starts where this one left off. A remembered value
+   * wins over `value`, and a value in the URL wins over both. The closest
+   * `CacheProvider` holds it; give a subtree its own to scope it. Read once,
+   * on mount.
+   */
+  rememberValue?: boolean;
 }
 
 /**
@@ -48,6 +57,20 @@ export function useVariableContextState<
   );
   const urlValue = urlState[urlKey];
 
+  // Read once, on mount. A remembered value only counts when it is a list for a
+  // multi-value variable, or a single value otherwise.
+  const cache = useCache();
+  const [rememberedValue] = React.useState(() => {
+    const remembered = input.rememberValue
+      ? cache.get<T>(input.name)
+      : undefined;
+
+    return remembered !== undefined && Array.isArray(remembered) === isMulti
+      ? remembered
+      : undefined;
+  });
+  const startValue = rememberedValue ?? input.value;
+
   const [loading, setLoading] = React.useState(input.loading);
   const [options, setOptions] = React.useState<VariableValueOption[]>(
     () => input.options ?? [],
@@ -55,7 +78,7 @@ export function useVariableContextState<
   // A value in the URL wins over the one the variable was given
   const [value, setValue] = React.useState<T>(() =>
     urlValue === undefined
-      ? input.value
+      ? startValue
       : (fromUrlValue(urlValue, options) as T),
   );
   const [error, setError] = React.useState<Error | null>(null);
@@ -71,11 +94,20 @@ export function useVariableContextState<
       // A parameter that is gone puts the variable back to where it started
       setValue(
         urlValue === undefined
-          ? input.value
+          ? startValue
           : (fromUrlValue(urlValue, options) as T),
       );
     }
   }
+
+  // Remember every value that holds something, whether it came from the user,
+  // the URL or options resolving
+  const { rememberValue, name } = input;
+  React.useEffect(() => {
+    if (rememberValue && hasValue(value)) {
+      cache.set<T>(name, value);
+    }
+  }, [cache, name, rememberValue, value]);
 
   // The latest value, for `onOptionsChange` to check. `onChange` sets it right
   // away, so options handed over in the same event check the new value.
@@ -158,6 +190,17 @@ export function useVariableContextState<
       input.parent,
     ],
   );
+}
+
+/**
+ * Whether the value holds something: a value that is set, or a list with one.
+ */
+export function hasValue(value: VariableValueOrValues) {
+  if (Array.isArray(value)) {
+    return value.some(hasValue);
+  }
+
+  return value.value !== undefined && value.value !== '';
 }
 
 /**

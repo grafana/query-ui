@@ -2,6 +2,8 @@ import { act, renderHook } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 
+import { CacheProvider } from '../caching/CacheContext';
+import { MemoryCache } from '../caching/MemoryCache';
 import { UrlStateProvider } from '../url/UrlStateContext';
 import type { VariableValue, VariableValueOrValues } from './types';
 import {
@@ -15,18 +17,23 @@ const c = { value: 'c', label: 'C' };
 
 /**
  * Renders the hook under a router at `entry`, along with the current search
- * string and a navigate function to change the URL from outside.
+ * string and a navigate function to change the URL from outside. `cache` is the
+ * one a remembered value goes to; each render gets its own otherwise.
  */
 function renderState<T extends VariableValueOrValues>(
   input: Omit<VariableValueStateInput<T>, 'name'>,
   entry = '/',
+  cache = new MemoryCache(),
 ) {
   const wrapper = ({ children }: { children: ReactNode }) =>
-    createElement(
-      MemoryRouter,
-      { initialEntries: [entry] },
-      createElement(UrlStateProvider, null, children),
-    );
+    createElement(CacheProvider, {
+      cache,
+      children: createElement(
+        MemoryRouter,
+        { initialEntries: [entry] },
+        createElement(UrlStateProvider, null, children),
+      ),
+    });
 
   return renderHook(
     () => ({
@@ -148,6 +155,86 @@ describe('useVariableContextState', () => {
 
       act(() => result.current.navigate({ search: '' }));
       expect(result.current.variable.value).toEqual([a, b]);
+    });
+  });
+
+  describe('When the value is remembered', () => {
+    it('Should start a later mount from the value the last one had', () => {
+      const cache = new MemoryCache();
+      const first = renderState<VariableValue>(
+        { value: a, rememberValue: true },
+        '/',
+        cache,
+      );
+
+      act(() => first.result.current.variable.onChange(b));
+      first.unmount();
+
+      const { result } = renderState(
+        { value: a, rememberValue: true },
+        '/',
+        cache,
+      );
+
+      expect(result.current.variable.value).toEqual(b);
+    });
+
+    it('Should prefer a value in the url', () => {
+      const cache = new MemoryCache();
+      cache.set('test', b);
+
+      const { result } = renderState(
+        { value: a, rememberValue: true },
+        '/?var-test=c',
+        cache,
+      );
+
+      expect(result.current.variable.getValue()).toBe('c');
+    });
+
+    it('Should go back to the remembered value when the url parameter is removed', () => {
+      const cache = new MemoryCache();
+      cache.set('test', b);
+
+      const { result } = renderState(
+        { value: a, rememberValue: true },
+        '/?var-test=c',
+        cache,
+      );
+      act(() => result.current.navigate({ search: '' }));
+
+      expect(result.current.variable.value).toEqual(b);
+    });
+
+    it('Should not remember an empty value', () => {
+      const cache = new MemoryCache();
+      renderState({ value: { value: '' }, rememberValue: true }, '/', cache);
+
+      expect(cache.has('test')).toBe(false);
+    });
+
+    it('Should ignore a remembered list for a single-value variable', () => {
+      const cache = new MemoryCache();
+      cache.set('test', [b]);
+
+      const { result } = renderState(
+        { value: a, rememberValue: true },
+        '/',
+        cache,
+      );
+
+      expect(result.current.variable.value).toEqual(a);
+    });
+
+    it('Should ignore the cache without rememberValue', () => {
+      const cache = new MemoryCache();
+      cache.set('test', b);
+
+      const { result } = renderState({ value: a }, '/', cache);
+      act(() => result.current.variable.onChange(c));
+
+      expect(result.current.variable.value).toEqual(c);
+      expect(cache.get('test')).toEqual(b);
     });
   });
 
