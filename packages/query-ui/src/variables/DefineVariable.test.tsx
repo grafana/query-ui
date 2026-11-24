@@ -31,6 +31,46 @@ describe('TestVariable', () => {
   });
 });
 
+describe('DefineVariable options', () => {
+  const options = [
+    { value: 'a', label: 'A' },
+    { value: 'b', label: 'B' },
+  ];
+
+  it('Starts from the options it is given', () => {
+    render(
+      <DefineVariable name="test" value={{ value: 'a' }} options={options}>
+        <PrintOptions />
+      </DefineVariable>,
+    );
+
+    expect(screen.getByTestId('options')).toHaveTextContent('a:A,b:B');
+  });
+
+  it('Labels a value from the url with the matching option', () => {
+    render(
+      <MemoryRouter initialEntries={['/?var-test=b']}>
+        <UrlStateProvider>
+          <DefineVariable name="test" value={{ value: 'a' }} options={options}>
+            <EvalExpression id="text" expr="${test:text}" />
+          </DefineVariable>
+        </UrlStateProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByTestId('text')).toHaveTextContent('B');
+  });
+});
+
+function PrintOptions() {
+  const variable = useContext(VariableContext);
+  const text = (variable?.options ?? [])
+    .map((o) => `${o.value}:${o.label}`)
+    .join(',');
+
+  return <div data-testid="options">{text}</div>;
+}
+
 describe('DefineVariable url sync', () => {
   function renderWithUrl(entry: string, skipUrlSync?: boolean) {
     return render(

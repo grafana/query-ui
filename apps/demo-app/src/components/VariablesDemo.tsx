@@ -14,6 +14,12 @@ import React from 'react';
 import { PageWrapper } from './PageWrapper';
 import { plainTimeSeriesGraph } from './sharedVisualizations';
 
+const podOptions = [
+  { value: 'pod1', label: 'Pod 1' },
+  { value: 'pod2', label: 'Pod 2' },
+  { value: 'pod3', label: 'Pod 3' },
+];
+
 export function VariablesDemo() {
   return (
     <PageWrapper title="Variables demo">
@@ -24,7 +30,9 @@ export function VariablesDemo() {
           value={[
             { value: 'pod1', label: 'Pod 1' },
             { value: 'pod2', label: 'Pod 2' },
+            { value: 'pod3', label: 'Pod 3' },
           ]}
+          options={podOptions}
         >
           <div>
             <Stack direction="column" gap={3}>

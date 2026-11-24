@@ -12,12 +12,14 @@ import {
 export interface DefineVariableProps {
   name: string;
   /**
-   * The value to start from. Pass a list, even an empty one, to make this a
-   * multi-value variable. See {@link useVariableContextState}.
+   * The value to start with. Pass an array, even an empty one, to make this a
+   * multi-value variable.
    */
   value?: VariableValueOrValues;
+  /** The options to start with. */
+  options?: VariableValueOption[];
   loading?: boolean;
-  /** Keeps the value out of the URL. See {@link useVariableContextState}. */
+  /** Keeps the value out of the URL. */
   skipUrlSync?: boolean;
   children: React.ReactNode;
 }
@@ -25,6 +27,7 @@ export interface DefineVariableProps {
 export function DefineVariable({
   name,
   value,
+  options,
   loading,
   skipUrlSync,
   children,
@@ -33,6 +36,7 @@ export function DefineVariable({
   const context = useVariableContextState<VariableValueOrValues>({
     name,
     value: value ?? {},
+    options,
     loading: loading,
     parent: parentContext,
     skipUrlSync,
@@ -48,11 +52,16 @@ export function DefineVariable({
 interface VariableValueStateInput<T extends VariableValueOrValues> {
   name: string;
   /**
-   * The value to start from. A list makes this a multi-value variable, which
+   * The value to start with. A list makes this a multi-value variable, which
    * syncs to one `var-<name>` query parameter per value. Whether it is a list
    * is read once, on mount.
    */
   value: T;
+  /**
+   * The options to start with, until a query replaces them. They also give a
+   * value read from the URL its label. Read once, on mount.
+   */
+  options?: VariableValueOption[];
   loading?: boolean;
   parent?: VariableContextState<unknown>;
   /**
@@ -121,12 +130,16 @@ export function useVariableContextState<
   const urlValue = urlState[urlKey];
 
   const [loading, setLoading] = React.useState(input.loading);
+  const [options, setOptions] = React.useState<VariableValueOption[]>(
+    () => input.options ?? [],
+  );
   // A value in the URL wins over the one the variable was given
   const [value, setValue] = React.useState<T>(() =>
-    urlValue === undefined ? input.value : (fromUrlValue(urlValue, []) as T),
+    urlValue === undefined
+      ? input.value
+      : (fromUrlValue(urlValue, options) as T),
   );
   const [error, setError] = React.useState<Error | null>(null);
-  const [options, setOptions] = React.useState<VariableValueOption[]>([]);
 
   // Pick up a change to the URL made from outside, like the back button. It is
   // set while rendering, so that the new value never shows up a render late.

@@ -39,7 +39,7 @@ export function VariableValueMultiCombobox({
         value={value}
         options={options}
         width="auto"
-        minWidth={25}
+        minWidth={45}
         onChange={onChange}
       />
     </Field>
