@@ -45,7 +45,7 @@ function VariableQueries() {
         gap={1}
       >
         {queries.map(({ query, searchFilter }, index) => (
-          <div key={index}>
+          <div key={index} role="listitem">
             {searchFilter ? `${query} (search: ${searchFilter})` : query}
           </div>
         ))}
@@ -63,8 +63,9 @@ const actions = (
 
 /**
  * Two nested query variables against FakeLabeledDataSource. The outer,
- * single-value one lists the label names. The inner, multi-value one lists the
- * values of the label the outer one holds, so its query references `${label}`.
+ * single-value one lists the label names with `labels()`. The inner,
+ * multi-value one lists the values of the label the outer one holds with
+ * `labelValues(${label})`.
  * Options load when a combobox opens, filtered by what the user types, and the
  * inner values are checked again whenever the outer one changes.
  */
@@ -76,11 +77,11 @@ export function QueryVariableDemoPage() {
       description="Two nested query variables, where the inner query depends on the outer variable. Options load when a combobox opens."
       actions={actions}
     >
-      <QueryVariable name="label" datasource={datasource} query="__keys">
+      <QueryVariable name="label" datasource={datasource} query="labels()">
         <QueryVariable
           name="labelValue"
           datasource={datasource}
-          query="${label}"
+          query="labelValues(${label})"
           value={[]}
         >
           <Stack direction="column" gap={2}>
