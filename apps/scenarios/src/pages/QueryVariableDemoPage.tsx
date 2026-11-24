@@ -67,7 +67,7 @@ const actions = (
  * multi-value one lists the values of the label the outer one holds with
  * `labelValues(${label})`.
  * Options load when a combobox opens, filtered by what the user types, and the
- * inner values are checked again whenever the outer one changes.
+ * inner values are checked again whenever the outer one changes. The labelValues combobox supports custom values.
  */
 export function QueryVariableDemoPage() {
   return (
@@ -87,7 +87,7 @@ export function QueryVariableDemoPage() {
           <Stack direction="column" gap={2}>
             <Stack>
               <VariableValueCombobox name="label" />
-              <VariableValueMultiCombobox name="labelValue" />
+              <VariableValueMultiCombobox name="labelValue" allowCustomValue />
             </Stack>
             <Interpolated />
             <VariableQueries />

@@ -38,6 +38,10 @@ export interface QueryVariableProps extends VariableQueryDefinition {
  * it is one of the options, otherwise the first option is selected. A
  * multi-value variable keeps the values that are options, and gets the first
  * option when none are.
+ *
+ * A value the variable starts with, like one from the URL, is not checked
+ * until what it depends on changes, so it is kept even when it is not one of
+ * the options.
  */
 export function QueryVariable({
   name,
@@ -95,11 +99,12 @@ export function QueryVariable({
   ]);
 
   // The dependencies the value was last checked against. A value the variable
-  // starts with is trusted, unless what it depends on is still loading.
+  // starts with, like one from the URL, is trusted until what it depends on
+  // changes. A dependency that is still loading only changes it if it ends up
+  // with a different value, so a value whose parent also comes from the URL is
+  // kept even when it is not one of the options.
   const [checkedKey, setCheckedKey] = useState(() =>
-    hasValue(currentValue) && !dependenciesLoading
-      ? dependenciesKey
-      : undefined,
+    hasValue(currentValue) ? dependenciesKey : undefined,
   );
   const loadOptions = useVariableOptionsLoader(queryProps);
 

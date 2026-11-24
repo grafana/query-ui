@@ -4,7 +4,8 @@ import { expect, type Page, test } from '@playwright/test';
 // FakeLabeledDataSource:
 //   label (single value):     query `labels()`, the label names
 //   labelValue (multi value): query `labelValues(${label})`, the values of that label
-// The page lists every variable query the data source receives.
+// The page lists every variable query the data source receives. The labelValue
+// combobox allows custom values.
 
 function labelInput(page: Page) {
   return page.getByRole('combobox', { name: 'label', exact: true });
@@ -62,5 +63,38 @@ test.describe('query variable', () => {
       'staging',
       'dev',
     ]);
+  });
+
+  test('keeps a custom labelValue when both values come from the url', async ({
+    page,
+  }) => {
+    await page.goto('/query-variable-demo?var-label=env&var-labelValue=custom');
+
+    await expect(interpolated(page)).toHaveText('label=env labelValue=custom');
+
+    await labelValueInput(page).click();
+
+    await expect(variableQueries(page)).toHaveText(['labelValues(env)']);
+    await expect(interpolated(page)).toHaveText('label=env labelValue=custom');
+    await expect(page).toHaveURL(/var-labelValue=custom/);
+  });
+
+  test('keeps a typed labelValue through a reload', async ({ page }) => {
+    await gotoWithValues(page);
+
+    await labelValueInput(page).click();
+    await labelValueInput(page).fill('canary');
+    await page.getByRole('option', { name: /canary/ }).click();
+
+    await expect(interpolated(page)).toHaveText(
+      'label=env labelValue=prod,canary',
+    );
+    await expect(page).toHaveURL(/var-labelValue=prod&var-labelValue=canary/);
+
+    await page.reload();
+
+    await expect(interpolated(page)).toHaveText(
+      'label=env labelValue=prod,canary',
+    );
   });
 });

@@ -10,10 +10,13 @@ import { toComboboxOptions } from '../VariableValueCombobox/VariableValueCombobo
 
 interface VariableValueMultiComboboxProps {
   name: string;
+  /** Lets the user enter values that are not options. */
+  allowCustomValue?: boolean;
 }
 
 export function VariableValueMultiCombobox({
   name,
+  allowCustomValue = false,
 }: VariableValueMultiComboboxProps) {
   const variable = useVariable<VariableValue[]>(name);
   const { loadOptions } = variable;
@@ -42,6 +45,7 @@ export function VariableValueMultiCombobox({
         options={options}
         width="auto"
         minWidth={45}
+        createCustomValue={allowCustomValue}
         onChange={onChange}
       />
     </Field>

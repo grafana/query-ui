@@ -10,9 +10,14 @@ import type {
 
 interface VariableValueComboboxProps {
   name: string;
+  /** Lets the user enter a value that is not one of the options. */
+  allowCustomValue?: boolean;
 }
 
-export function VariableValueCombobox({ name }: VariableValueComboboxProps) {
+export function VariableValueCombobox({
+  name,
+  allowCustomValue = false,
+}: VariableValueComboboxProps) {
   const variable = useVariable<VariableValue>(name);
   const { loadOptions } = variable;
   // Loaded when the combobox opens and as the user types, if the variable supports it
@@ -38,6 +43,7 @@ export function VariableValueCombobox({ name }: VariableValueComboboxProps) {
         options={options}
         width="auto"
         minWidth={20}
+        createCustomValue={allowCustomValue}
         onChange={onChange}
       />
     </Field>
