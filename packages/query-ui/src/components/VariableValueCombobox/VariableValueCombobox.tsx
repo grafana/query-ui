@@ -31,6 +31,7 @@ export function VariableValueCombobox({ name }: VariableValueComboboxProps) {
   return (
     <Field label={name} noMargin>
       <Combobox
+        id={`variable-${name}`}
         loading={variable.loading}
         value={value}
         options={options}

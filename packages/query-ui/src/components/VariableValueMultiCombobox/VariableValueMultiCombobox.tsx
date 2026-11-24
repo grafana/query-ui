@@ -35,6 +35,7 @@ export function VariableValueMultiCombobox({
   return (
     <Field label={name} noMargin>
       <MultiCombobox
+        id={`variable-${name}`}
         loading={variable.loading}
         value={value}
         options={options}
