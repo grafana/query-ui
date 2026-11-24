@@ -8,7 +8,10 @@ import { Stack } from '@grafana/ui';
 
 import { PluginPage } from '../components/PluginPage';
 
-const breadcrumbs = [{ text: 'Scenarios', url: '/' }, { text: 'Variables demo' }];
+const breadcrumbs = [
+  { text: 'Scenarios', url: '/' },
+  { text: 'Variables demo' },
+];
 
 const serviceOptions = [
   { value: 'api', label: 'API' },
