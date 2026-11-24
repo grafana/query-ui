@@ -25,15 +25,7 @@ export function VariablesDemo() {
     <PageWrapper title="Variables demo">
       <DefineVariable name="service" loading={true}>
         <VariableTestQuery name="service" query="A.*" delay={2000} />
-        <DefineVariable
-          name="pod"
-          value={[
-            { value: 'pod1', label: 'Pod 1' },
-            { value: 'pod2', label: 'Pod 2' },
-            { value: 'pod3', label: 'Pod 3' },
-          ]}
-          options={podOptions}
-        >
+        <DefineVariable name="pod" value={podOptions.slice(0, 2)} options={podOptions}>
           <div>
             <Stack direction="column" gap={3}>
               <Stack>
