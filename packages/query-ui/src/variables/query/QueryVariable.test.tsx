@@ -8,7 +8,11 @@ import { CacheProvider } from '../../caching/CacheContext';
 import { useVariable } from '../../hooks/useVariable';
 import { TimeRangeContextProvider } from '../../time/TimeRangeContext';
 import { DefineVariable } from '../DefineVariable';
-import type { VariableValue, VariableValueOption } from '../types';
+import type {
+  VariableValue,
+  VariableValueOption,
+  VariableValueOrValues,
+} from '../types';
 import { QueryVariable, type QueryVariableProps } from './QueryVariable';
 
 // The real module drags @grafana/ui into jsdom
@@ -35,11 +39,13 @@ const metricFindQuery = vi.fn(
       .map((text) => ({ text })),
 );
 
+const web = { value: 'web', label: 'web' };
+
 let loadOptions:
   ((search: string) => Promise<VariableValueOption[]>) | undefined;
 
 function Probe({ name }: { name: string }) {
-  const variable = useVariable<VariableValue>(name);
+  const variable = useVariable<VariableValueOrValues>(name);
   React.useEffect(() => {
     loadOptions = variable.loadOptions;
   });
@@ -47,7 +53,7 @@ function Probe({ name }: { name: string }) {
   return (
     <>
       <div data-testid="loading">{String(Boolean(variable.loading))}</div>
-      <div data-testid="value">{String(variable.value.value)}</div>
+      <div data-testid="value">{String(variable.getValue())}</div>
     </>
   );
 }
@@ -117,7 +123,7 @@ describe('QueryVariable', () => {
 
   describe('When there is a value', () => {
     it('Should not run the query until options are loaded', async () => {
-      renderVariable({ value: 'web' });
+      renderVariable({ value: web });
 
       expect(screen.getByTestId('loading')).toHaveTextContent('false');
       expect(screen.getByTestId('value')).toHaveTextContent('web');
@@ -127,7 +133,7 @@ describe('QueryVariable', () => {
 
   describe('When options are loaded on demand', () => {
     it('Should send the search as the search filter', async () => {
-      renderVariable({ value: 'web' });
+      renderVariable({ value: web });
 
       const options = await act(() => loadOptions!('b'));
 
@@ -140,7 +146,7 @@ describe('QueryVariable', () => {
 
     it('Should apply the regex and static options', async () => {
       renderVariable({
-        value: 'web',
+        value: web,
         regex: '^(api|web)$',
         staticOptions: [{ value: 'all', label: 'All' }],
       });
@@ -173,7 +179,7 @@ describe('QueryVariable', () => {
       );
     }
 
-    function renderChained(value: string) {
+    function renderChained(value: VariableValueOrValues) {
       return renderVariable({ query: '${label}', value }, (node) => (
         <DefineVariable
           name="label"
@@ -187,7 +193,7 @@ describe('QueryVariable', () => {
     }
 
     it('Should keep the value when it is still one of the options', async () => {
-      renderChained('web');
+      renderChained(web);
 
       await act(async () => screen.getByText('tier').click());
 
@@ -200,7 +206,7 @@ describe('QueryVariable', () => {
     });
 
     it('Should select the first option when the value is no longer one of the options', async () => {
-      renderChained('web');
+      renderChained(web);
 
       await act(async () => screen.getByText('pod').click());
 
@@ -211,7 +217,7 @@ describe('QueryVariable', () => {
     });
 
     it('Should not run the query again while the references stay the same', async () => {
-      renderChained('web');
+      renderChained(web);
 
       await act(async () => screen.getByText('pod').click());
       await waitFor(() =>
@@ -219,6 +225,71 @@ describe('QueryVariable', () => {
       );
 
       expect(metricFindQuery).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('When the variable is multi-value', () => {
+    function PickLabel({ label }: { label: string }) {
+      const variable = useVariable<VariableValue>('label');
+
+      return (
+        <button onClick={() => variable.onChange({ value: label, label })}>
+          {label}
+        </button>
+      );
+    }
+
+    function renderChained(value: VariableValue[]) {
+      return renderVariable({ query: '${label}', value }, (node) => (
+        <DefineVariable
+          name="label"
+          value={{ value: 'service', label: 'service' }}
+        >
+          <PickLabel label="tier" />
+          <PickLabel label="pod" />
+          {node}
+        </DefineVariable>
+      ));
+    }
+
+    const db = { value: 'db', label: 'db' };
+    const api = { value: 'api', label: 'api' };
+
+    it('Should select the first option as a list when there is no value', async () => {
+      renderVariable({ value: [] });
+
+      await waitFor(() =>
+        expect(screen.getByTestId('value')).toHaveTextContent('api'),
+      );
+      expect(screen.getByTestId('loading')).toHaveTextContent('false');
+    });
+
+    it('Should not run the query on mount when there are values', async () => {
+      renderVariable({ value: [web, db] });
+
+      expect(screen.getByTestId('value')).toHaveTextContent('web,db');
+      expect(metricFindQuery).not.toHaveBeenCalled();
+    });
+
+    it('Should keep the values that are still options', async () => {
+      renderChained([api, web, db]);
+
+      await act(async () => screen.getByText('tier').click());
+
+      await waitFor(() =>
+        expect(screen.getByTestId('value')).toHaveTextContent('web,db'),
+      );
+      expect(screen.getByTestId('value')).toHaveTextContent(/^web,db$/);
+    });
+
+    it('Should select the first option when none of the values are options', async () => {
+      renderChained([web, db]);
+
+      await act(async () => screen.getByText('pod').click());
+
+      await waitFor(() =>
+        expect(screen.getByTestId('value')).toHaveTextContent(/^api-1$/),
+      );
     });
   });
 });

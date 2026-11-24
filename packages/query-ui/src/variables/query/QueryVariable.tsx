@@ -9,6 +9,7 @@ import {
   VariableContext,
   type VariableValue,
   type VariableValueOption,
+  type VariableValueOrValues,
 } from '../types';
 import { useVariableOptionsLoader } from './useVariableOptionsQuery';
 import type { StaticOptionsOrder } from './utils';
@@ -16,10 +17,11 @@ import type { StaticOptionsOrder } from './utils';
 export interface QueryVariableProps {
   name: string;
   /**
-   * Initial value. A value from the URL, or one remembered from an earlier
-   * mount of a variable with the same `name`, wins over this one.
+   * Initial value. Pass an array, even an empty one, to make this a
+   * multi-value variable. A value from the URL, or one remembered from an
+   * earlier mount of a variable with the same `name`, wins over this one.
    */
-  value?: string;
+  value?: VariableValueOrValues;
   /** Data source to run the query against. The uid can reference other variables. */
   datasource: { uid: string };
   /** The variable query. A string query can reference other variables. */
@@ -48,7 +50,9 @@ export interface QueryVariableProps {
  * `loadOptions`), with what the user types sent as `__searchFilter`. It also
  * runs to check the value: on mount when there is no value yet, and whenever
  * the interpolated data source, query or regex change. The value is kept when
- * it is one of the options, otherwise the first option is selected.
+ * it is one of the options, otherwise the first option is selected. A
+ * multi-value variable keeps the values that are options, and gets the first
+ * option when none are.
  */
 export function QueryVariable({
   name,
@@ -67,16 +71,19 @@ export function QueryVariable({
   const cache = useCache();
 
   // Read once: the state below only takes its initial value from this on mount
-  const [cachedValue] = useState(() => cache.get<VariableValue>(name));
-  const initialValue = cachedValue ?? {
-    value: value ?? '',
-    label: value ?? '',
-  };
+  const [cachedValue] = useState(() => cache.get<VariableValueOrValues>(name));
+  const initialValue = value ?? {};
+  // A remembered value only counts when it is single or multi like this one
+  const startValue =
+    cachedValue !== undefined &&
+    Array.isArray(cachedValue) === Array.isArray(initialValue)
+      ? cachedValue
+      : initialValue;
 
-  const context = useVariableContextState({
+  const context = useVariableContextState<VariableValueOrValues>({
     name,
-    value: initialValue,
-    loading: !hasValue(initialValue),
+    value: startValue,
+    loading: !hasValue(startValue),
     parent: parentContext,
     skipUrlSync,
   });
@@ -87,7 +94,7 @@ export function QueryVariable({
   // Remember the selection under the variable name, so a remount picks it up
   useEffect(() => {
     if (hasValue(currentValue)) {
-      cache.set<VariableValue>(name, currentValue);
+      cache.set<VariableValueOrValues>(name, currentValue);
     }
   }, [cache, name, currentValue]);
 
@@ -159,10 +166,7 @@ export function QueryVariable({
         onOptionsChange(options);
         const current = valueRef.current;
         const validated = validateValue(current, options);
-        if (
-          validated.value !== current.value ||
-          validated.label !== current.label
-        ) {
+        if (!sameValue(validated, current)) {
           onChange(validated);
         }
         onSetError(null);
@@ -205,24 +209,55 @@ export function QueryVariable({
 
 /**
  * Keeps the current value when it is one of the options, with the option's
- * label, otherwise picks the first option.
+ * label, otherwise picks the first option. A list keeps the values that are
+ * options, and gets the first option when none are.
  */
 function validateValue(
-  current: VariableValue,
+  current: VariableValueOrValues,
   options: VariableValueOption[],
-): VariableValue {
-  const match = options.find(
-    (option) => String(option.value) === String(current.value),
-  );
-  const selected = match ?? options[0];
+): VariableValueOrValues {
+  const findOption = (item: VariableValue) =>
+    options.find((option) => String(option.value) === String(item.value));
+  const first = options[0];
 
-  if (!selected) {
-    return { value: '', label: '' };
+  if (Array.isArray(current)) {
+    const kept = current.flatMap((item) => {
+      const option = findOption(item);
+      return option ? [toValue(option)] : [];
+    });
+
+    if (kept.length > 0 || !first) {
+      return kept;
+    }
+
+    return [toValue(first)];
   }
 
-  return { value: selected.value, label: selected.label };
+  const selected = findOption(current) ?? first;
+
+  return selected ? toValue(selected) : { value: '', label: '' };
 }
 
-function hasValue(value: VariableValue) {
+function toValue(option: VariableValueOption): VariableValue {
+  return { value: option.value, label: option.label };
+}
+
+function sameValue(a: VariableValueOrValues, b: VariableValueOrValues) {
+  const pairs = (value: VariableValueOrValues) =>
+    JSON.stringify(
+      (Array.isArray(value) ? value : [value]).map((item) => [
+        item.value,
+        item.label,
+      ]),
+    );
+
+  return Array.isArray(a) === Array.isArray(b) && pairs(a) === pairs(b);
+}
+
+function hasValue(value: VariableValueOrValues) {
+  if (Array.isArray(value)) {
+    return value.some(hasValue);
+  }
+
   return value.value !== undefined && value.value !== '';
 }

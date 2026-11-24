@@ -4,6 +4,7 @@ import {
   TimeRangeRefresh,
   useInterpolator,
   VariableValueCombobox,
+  VariableValueMultiCombobox,
 } from '@grafana/query-ui';
 import { Stack } from '@grafana/ui';
 
@@ -19,7 +20,9 @@ const datasource = { uid: FAKE_LABELED_DATASOURCE_UID };
 
 /** Both variables run through the interpolator, so a test can read them back. */
 function Interpolated() {
-  const [values] = useInterpolator('label=${label} labelValue=${labelValue}');
+  const [values] = useInterpolator(
+    'label=${label} labelValue=${labelValue:csv}',
+  );
 
   return <div data-testid="interpolated">{values}</div>;
 }
@@ -32,11 +35,11 @@ const actions = (
 );
 
 /**
- * Two nested single-value query variables against FakeLabeledDataSource. The
- * outer one lists the label names, and the inner one lists the values of the
- * label the outer one holds, so its query references `${label}`. Options load
- * when a combobox opens, filtered by what the user types, and the inner value
- * is checked again whenever the outer one changes.
+ * Two nested query variables against FakeLabeledDataSource. The outer,
+ * single-value one lists the label names. The inner, multi-value one lists the
+ * values of the label the outer one holds, so its query references `${label}`.
+ * Options load when a combobox opens, filtered by what the user types, and the
+ * inner values are checked again whenever the outer one changes.
  */
 export function QueryVariableDemoPage() {
   return (
@@ -51,11 +54,12 @@ export function QueryVariableDemoPage() {
           name="labelValue"
           datasource={datasource}
           query="${label}"
+          value={[]}
         >
           <Stack direction="column" gap={2}>
             <Stack>
               <VariableValueCombobox name="label" />
-              <VariableValueCombobox name="labelValue" />
+              <VariableValueMultiCombobox name="labelValue" />
             </Stack>
             <Interpolated />
           </Stack>
