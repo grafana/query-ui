@@ -13,6 +13,8 @@ import {
   type TestDataSourceResponse,
 } from '@grafana/data';
 
+import { trackVariableQuery } from './fakeVariableQueries';
+
 export interface FakeLabeledQuery extends DataQuery {
   alias?: string;
 }
@@ -73,6 +75,7 @@ export class FakeLabeledDataSource extends DataSourceApi<FakeLabeledQuery> {
     query: string,
     options?: { searchFilter?: string },
   ): Promise<MetricFindValue[]> {
+    trackVariableQuery({ query, searchFilter: options?.searchFilter });
     await new Promise((resolve) => setTimeout(resolve, 300));
     const search = options?.searchFilter?.toLowerCase() ?? '';
 

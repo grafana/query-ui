@@ -10,6 +10,7 @@ import { Stack } from '@grafana/ui';
 
 import { PluginPage } from '../components/PluginPage';
 import { FAKE_LABELED_DATASOURCE_UID } from '../grafana/constants';
+import { useFakeVariableQueries } from '../grafana/fakeVariableQueries';
 
 const breadcrumbs = [
   { text: 'Scenarios', url: '/' },
@@ -25,6 +26,24 @@ function Interpolated() {
   );
 
   return <div data-testid="interpolated">{values}</div>;
+}
+
+/**
+ * Every variable query the data source has received, in order, so a test can
+ * tell when options load.
+ */
+function VariableQueries() {
+  const queries = useFakeVariableQueries();
+
+  return (
+    <ul data-testid="variable-queries" aria-label="Variable queries">
+      {queries.map(({ query, searchFilter }, index) => (
+        <li key={index}>
+          {searchFilter ? `${query} (search: ${searchFilter})` : query}
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 const actions = (
@@ -62,6 +81,7 @@ export function QueryVariableDemoPage() {
               <VariableValueMultiCombobox name="labelValue" />
             </Stack>
             <Interpolated />
+            <VariableQueries />
           </Stack>
         </QueryVariable>
       </QueryVariable>
