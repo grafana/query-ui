@@ -16,6 +16,7 @@ const scenarios: Scenario[] = [
   { path: '/slow-query-demo', label: 'Slow query demo' },
   { path: '/many-series-demo', label: 'Many series demo' },
   { path: '/variables-demo', label: 'Variables demo' },
+  { path: '/query-variable-demo', label: 'Query variable demo' },
 ];
 
 export function HomePage() {

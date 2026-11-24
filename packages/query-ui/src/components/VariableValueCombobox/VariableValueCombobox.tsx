@@ -5,6 +5,7 @@ import { useVariable } from '../../hooks/useVariable';
 import type {
   VariableContextState,
   VariableValue,
+  VariableValueOption,
 } from '../../variables/types';
 
 interface VariableValueComboboxProps {
@@ -13,11 +14,11 @@ interface VariableValueComboboxProps {
 
 export function VariableValueCombobox({ name }: VariableValueComboboxProps) {
   const variable = useVariable<VariableValue>(name);
-  const options =
-    variable.options?.map((x) => ({
-      value: String(x.value),
-      label: x.label ?? String(x.value),
-    })) ?? [];
+  const { loadOptions } = variable;
+  // Loaded when the combobox opens and as the user types, if the variable supports it
+  const options = loadOptions
+    ? (search: string) => loadOptions(search).then(toComboboxOptions)
+    : toComboboxOptions(variable.options ?? []);
 
   const onChange = (newValue: ComboboxOption<string>) => {
     variable.onChange({
@@ -50,9 +51,20 @@ function getComboboxValue(variable: VariableContextState<VariableValue>) {
     );
   }
 
-  if (typeof variable.value.value === 'string') {
-    return variable.value.value;
+  const { value, label } = variable.value;
+  if (value === undefined || value === '') {
+    return null;
   }
 
-  return null;
+  // An option rather than a plain value, so the label shows before any options load
+  return { value: String(value), label: label ?? String(value) };
+}
+
+export function toComboboxOptions(
+  options: VariableValueOption[],
+): Array<ComboboxOption<string>> {
+  return options.map((x) => ({
+    value: String(x.value),
+    label: x.label ?? String(x.value),
+  }));
 }

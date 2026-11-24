@@ -7,6 +7,7 @@ import { HomePage } from './pages/HomePage';
 import { LazyGridDemoPage } from './pages/LazyGridDemoPage';
 import { ManySeriesDemoPage } from './pages/ManySeriesDemoPage';
 import { PanelGridLayoutDemoPage } from './pages/PanelGridLayoutDemoPage';
+import { QueryVariableDemoPage } from './pages/QueryVariableDemoPage';
 import { SinglePanelDemoPage } from './pages/SinglePanelDemoPage';
 import { SlowQueryDemoPage } from './pages/SlowQueryDemoPage';
 import { VariablesDemoPage } from './pages/VariablesDemoPage';
@@ -40,6 +41,10 @@ export function App() {
                 element={<ManySeriesDemoPage />}
               />
               <Route path="/variables-demo" element={<VariablesDemoPage />} />
+              <Route
+                path="/query-variable-demo"
+                element={<QueryVariableDemoPage />}
+              />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </TimeRangeContextProvider>

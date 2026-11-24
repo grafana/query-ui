@@ -64,6 +64,26 @@ export class FakeLabeledDataSource extends DataSourceApi<FakeLabeledQuery> {
     return (TAG_VALUES[options.key] ?? []).map((value) => ({ text: value }));
   }
 
+  /**
+   * Variable query (legacy variable support): the query names a label and the
+   * result is its values (`__keys` lists the labels), narrowed to the ones containing the search filter.
+   * A short delay makes the loading state visible.
+   */
+  async metricFindQuery(
+    query: string,
+    options?: { searchFilter?: string },
+  ): Promise<MetricFindValue[]> {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const search = options?.searchFilter?.toLowerCase() ?? '';
+
+    const values =
+      query === '__keys' ? Object.keys(TAG_VALUES) : TAG_VALUES[query];
+
+    return (values ?? [])
+      .filter((value) => value.toLowerCase().includes(search))
+      .map((value) => ({ text: value }));
+  }
+
   async testDatasource(): Promise<TestDataSourceResponse> {
     return {
       status: 'success',
