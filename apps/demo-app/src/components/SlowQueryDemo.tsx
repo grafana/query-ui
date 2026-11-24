@@ -2,7 +2,7 @@ import {
   useInterpolator,
   useDataQuery,
   VizPanel,
-  VariableValueSelect,
+  VariableValueCombobox,
   DataSourceVariable,
   GridPanelLayout,
 } from '@grafana/query-ui';
@@ -18,7 +18,7 @@ export function SlowQueryDemo() {
       <DataSourceVariable name="ds" loading={true} pluginId="grafana-testdata-datasource">
         <Stack direction="column" gap={3}>
           <Stack justifyContent={'space-between'}>
-            <VariableValueSelect name="ds" />
+            <VariableValueCombobox name="ds" />
           </Stack>
           <GridPanelLayout>
             <SlowQueryGraph name="Latency" />

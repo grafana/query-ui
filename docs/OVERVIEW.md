@@ -88,7 +88,7 @@ Multiple variables are nested contexts. Each provider keeps a `parent` reference
 <DataSourceVariable name="ds" pluginId="prometheus">
   <DefineVariable name="service" value={{ value: 'api' }}>
     <DefineVariable name="pod" value={{ value: 'api-1' }}>
-      <VariableValueSelect name="service" />
+      <VariableValueCombobox name="service" />
       <Panels />
     </DefineVariable>
   </DefineVariable>

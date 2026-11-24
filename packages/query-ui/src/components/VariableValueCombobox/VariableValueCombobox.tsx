@@ -7,11 +7,11 @@ import type {
   VariableValue,
 } from '../../variables/types';
 
-interface VariableValueSelectProps {
+interface VariableValueComboboxProps {
   name: string;
 }
 
-export function VariableValueSelect({ name }: VariableValueSelectProps) {
+export function VariableValueCombobox({ name }: VariableValueComboboxProps) {
   const variable = useVariable<VariableValue>(name);
   const options =
     variable.options?.map((x) => ({
@@ -43,7 +43,7 @@ export function VariableValueSelect({ name }: VariableValueSelectProps) {
 function getComboboxValue(variable: VariableContextState<VariableValue>) {
   if (isArray(variable.value)) {
     throw new Error(
-      'VariableValueSelect does not support multi-value variables',
+      'VariableValueCombobox does not support multi-value variables',
     );
   }
 

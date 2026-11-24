@@ -5,7 +5,8 @@ export {
   useCache,
 } from './caching/CacheContext';
 export { type CacheEntry, MemoryCache } from './caching/MemoryCache';
-export { VariableValueSelect } from './components/VariableValueSelect/VariableValueSelect';
+export { VariableValueCombobox } from './components/VariableValueCombobox/VariableValueCombobox';
+export { VariableValueMultiCombobox } from './components/VariableValueMultiCombobox/VariableValueMultiCombobox';
 export { type VizConfig } from './components/VizPanel/PanelBuilders/types';
 export { VizConfigBuilder } from './components/VizPanel/PanelBuilders/VizConfigBuilder';
 export { VizConfigBuilders } from './components/VizPanel/PanelBuilders/VizConfigBuilders';
