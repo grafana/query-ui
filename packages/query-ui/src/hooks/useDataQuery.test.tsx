@@ -3,7 +3,6 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import React from 'react';
 import { Subject } from 'rxjs';
 import {
-  type DataQuery,
   type DataQueryRequest,
   type DataSourceApi,
   FieldType,
@@ -12,7 +11,9 @@ import {
   type PanelData,
   toDataFrame,
 } from '@grafana/data';
-import { getDataSourceSrv, getRunRequest } from '@grafana/runtime';
+import { getDataSourceInstance } from '@grafana/plugin-compat/datasources';
+import { getRunRequest } from '@grafana/runtime';
+import type { DataQuery } from '@grafana/schema';
 
 import type { VizConfig } from '../components/VizPanel/PanelBuilders/types';
 import { useVizPanel } from '../components/VizPanel/useVizPanel';
@@ -24,12 +25,15 @@ import { useTimeRange } from './useTimeRange';
 vi.mock('@grafana/runtime', () => ({
   config: { bootData: { user: { timezone: 'browser' } } },
   getRunRequest: vi.fn(),
-  getDataSourceSrv: vi.fn(),
   // No panel plugin: the tests only need useVizPanel's cancel handler.
   getPluginImportUtils: () => ({
     getPanelPluginFromCache: () => undefined,
     importPanelPlugin: () => new Promise(() => {}),
   }),
+}));
+
+vi.mock('@grafana/plugin-compat/datasources', () => ({
+  getDataSourceInstance: vi.fn(),
 }));
 
 const vizConfig = {
@@ -106,9 +110,7 @@ describe('useDataQuery', () => {
       requests.push(request);
       return request.asObservable();
     });
-    vi.mocked(getDataSourceSrv).mockReturnValue({
-      get: () => Promise.resolve(datasource),
-    } as unknown as ReturnType<typeof getDataSourceSrv>);
+    vi.mocked(getDataSourceInstance).mockResolvedValue(datasource);
   });
 
   afterEach(() => {

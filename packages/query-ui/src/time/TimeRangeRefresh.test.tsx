@@ -25,6 +25,10 @@ vi.mock('@grafana/ui', () => ({
   ),
 }));
 
+vi.mock('@grafana/plugin-compat/datasources', () => ({
+  getDataSourceInstance: vi.fn(),
+}));
+
 function RefreshCount() {
   return <span data-testid="count">{useTimeRange().refreshCounter}</span>;
 }

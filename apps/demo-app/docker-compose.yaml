@@ -3,3 +3,75 @@ services:
     extends:
       file: .config/docker-compose-base.yaml
       service: grafana
+    environment:
+      GF_METRICS_ENABLED: 'true'
+      GF_LOG_MODE: console file
+      GF_LOG_FILE_FORMAT: json
+      GF_LOG_FRONTEND_ENABLED: 'true'
+      GF_LOG_FRONTEND_CUSTOM_ENDPOINT: http://localhost:12347/collect
+      GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS: alloy:4317
+      GF_TRACING_OPENTELEMETRY_OTLP_INSECURE: 'true'
+      GF_TRACING_OPENTELEMETRY_SAMPLER_TYPE: const
+      GF_TRACING_OPENTELEMETRY_SAMPLER_PARAM: '1'
+      GF_DIAGNOSTICS_PROFILING_ENABLED: 'true'
+      GF_DIAGNOSTICS_PROFILING_ADDR: 0.0.0.0
+      GF_DIAGNOSTICS_PROFILING_PORT: '6060'
+    volumes:
+      - grafana-logs:/var/log/grafana
+    depends_on:
+      - alloy
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    ports:
+      - '127.0.0.1:9090:9090'
+    command:
+      - --enable-feature=exemplar-storage
+      - --enable-feature=native-histograms
+      - --web.enable-remote-write-receiver
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    volumes:
+      - ./docker/self-instrumentation/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+
+  loki:
+    image: grafana/loki:3.5.3
+    ports:
+      - '127.0.0.1:3100:3100'
+    command: -config.file=/etc/loki/local-config.yaml
+
+  tempo:
+    image: grafana/tempo:2.8.1
+    command: -config.file=/etc/tempo.yaml
+    volumes:
+      - ./docker/self-instrumentation/tempo.yaml:/etc/tempo.yaml:ro
+    ports:
+      - '127.0.0.1:3200:3200'
+
+  pyroscope:
+    image: grafana/pyroscope:1.14.0
+    ports:
+      - '127.0.0.1:4040:4040'
+
+  alloy:
+    image: grafana/alloy:v1.10.0
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --storage.path=/var/lib/alloy/data
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --stability.level=experimental
+    ports:
+      - '127.0.0.1:12345:12345'
+      - '127.0.0.1:12347:12347'
+    volumes:
+      - ./docker/self-instrumentation/config.alloy:/etc/alloy/config.alloy:ro
+      - grafana-logs:/var/log/grafana:ro
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+      - pyroscope
+
+volumes:
+  grafana-logs:
