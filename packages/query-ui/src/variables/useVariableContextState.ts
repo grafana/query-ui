@@ -9,13 +9,12 @@ import type {
   VariableValueOrValues,
 } from './types';
 
-export interface VariableValueStateInput<T> {
+export interface VariableValueStateInput<T extends VariableValueOrValues> {
   name: string;
   /**
-   * The value to start with. A list makes this a multi-value variable, which
-   * syncs to one `var-<name>` query parameter per value. Whether it is a list
-   * is read once, on mount. Left out, the variable starts with no value, as a
-   * single-value variable.
+   * The value to start with. An array makes this a multi-value variable, which
+   * syncs to one `var-<name>` query parameter per value. This is only the initial value.
+   * Changes after mount has no effect.
    */
   value: T;
   /**

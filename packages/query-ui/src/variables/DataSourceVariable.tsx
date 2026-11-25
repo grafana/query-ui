@@ -9,7 +9,7 @@ import type { DataSourceRef } from '@grafana/schema';
 import { useInterpolator } from './interpolation/useInterpolator';
 import {
   VariableContext,
-  VariableValueOrValues,
+  VariableValue,
   type VariableContextState,
   type VariableValueOption,
 } from './types';
@@ -94,7 +94,7 @@ interface DataSourceOptionsArgs {
 }
 
 function useDataSourceOptions(
-  context: VariableContextState<VariableValueOrValues>,
+  context: VariableContextState<VariableValue>,
   {
     pluginId,
     regex,
