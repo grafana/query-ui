@@ -13,7 +13,7 @@ import {
 } from '@grafana/data';
 import { getDataSourceInstance } from '@grafana/plugin-compat/datasources';
 import { getRunRequest } from '@grafana/runtime';
-import type { DataQuery } from '@grafana/schema';
+import type { DataQuery, TimeZone } from '@grafana/schema';
 
 import type { VizConfig } from '../components/VizPanel/PanelBuilders/types';
 import { useVizPanel } from '../components/VizPanel/useVizPanel';
@@ -74,14 +74,16 @@ function seriesValue(data: PanelData | undefined) {
 
 let queryClient: QueryClient;
 
-function renderDataQuery() {
+function renderDataQuery({ timeZone }: { timeZone?: TimeZone } = {}) {
   queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
 
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-      <TimeRangeContextProvider>{children}</TimeRangeContextProvider>
+      <TimeRangeContextProvider timeZone={timeZone}>
+        {children}
+      </TimeRangeContextProvider>
     </QueryClientProvider>
   );
 
@@ -156,6 +158,24 @@ describe('useDataQuery', () => {
     await waitFor(() => expect(requests).toHaveLength(1));
 
     expect(requestArgs[0].requestId).toMatch(/^\["data",/);
+  });
+
+  it('sends the time zone of the time range provider', async () => {
+    const { result } = renderDataQuery({ timeZone: 'Europe/Oslo' });
+
+    await waitFor(() => expect(requests).toHaveLength(1));
+
+    expect(result.current.timeRange.timeZone).toBe('Europe/Oslo');
+    expect(requestArgs[0].timezone).toBe('Europe/Oslo');
+  });
+
+  it('sends the default time zone when the provider has none', async () => {
+    const { result } = renderDataQuery();
+
+    await waitFor(() => expect(requests).toHaveLength(1));
+
+    expect(result.current.timeRange.timeZone).toBe('browser');
+    expect(requestArgs[0].timezone).toBe('browser');
   });
 
   it('the panel cancel aborts a refresh and keeps the previous data', async () => {
