@@ -1,7 +1,7 @@
 import {
   type AdHocFilterWithLabels,
   isMultiValueOperator,
-} from './AdhocFiltersContext';
+} from './filterModel';
 
 /** Which part of the filter the input is picking. */
 export type EditorStep = 'key' | 'operator' | 'value';

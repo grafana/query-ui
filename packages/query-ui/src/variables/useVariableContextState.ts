@@ -9,7 +9,7 @@ import type {
   VariableValueOrValues,
 } from './types';
 
-export interface VariableValueStateInput<T extends VariableValueOrValues> {
+export interface VariableValueStateInput<T> {
   name: string;
   /**
    * The value to start with. A list makes this a multi-value variable, which
@@ -17,7 +17,7 @@ export interface VariableValueStateInput<T extends VariableValueOrValues> {
    * is read once, on mount. Left out, the variable starts with no value, as a
    * single-value variable.
    */
-  value?: T;
+  value: T;
   /**
    * The options to start with, until a query replaces them. They also give a
    * value read from the URL its label. Read once, on mount.
@@ -75,8 +75,8 @@ export function useVariableContextState<
       ? remembered
       : undefined;
   });
-  const startValue =
-    rememberedValue ?? input.value ?? ({ value: '', label: '' } as T);
+
+  const startValue = rememberedValue ?? input.value ?? { value: '', label: '' };
 
   const [options, setOptions] = React.useState<VariableValueOption[]>(
     () => input.options ?? [],
@@ -87,6 +87,7 @@ export function useVariableContextState<
       ? startValue
       : (fromUrlValue(urlValue, options) as T),
   );
+
   const [loading, setLoading] = React.useState(
     () => input.loading ?? !hasValue(value),
   );
@@ -209,7 +210,7 @@ export function hasValue(value: VariableValueOrValues) {
     return value.some(hasValue);
   }
 
-  return value.value !== undefined && value.value !== '';
+  return value.value != undefined;
 }
 
 /**
@@ -241,7 +242,7 @@ function validateValue(
 
   const selected = findOption(current) ?? first;
 
-  return selected ? toValue(selected) : { value: '', label: '' };
+  return selected ? toValue(selected) : { value: undefined, label: undefined };
 }
 
 function toValue(option: VariableValueOption): VariableValue {

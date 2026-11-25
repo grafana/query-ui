@@ -8,7 +8,7 @@ import {
   AdHocFilterEditor,
   type AdHocFilterEditorFocusTarget,
 } from './AdHocFilterEditor';
-import type { AdHocFilterWithLabels } from './AdhocFiltersContext';
+import type { AdHocFilterWithLabels } from './filterModel';
 
 export interface AdHocFilterPillProps {
   filter: AdHocFilterWithLabels;

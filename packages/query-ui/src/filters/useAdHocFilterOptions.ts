@@ -6,8 +6,8 @@ import { getDataSourceSrv } from '@grafana/runtime';
 import { useAdhocFilters } from '../hooks/useAdhocFilters';
 import { useTimeRange } from '../hooks/useTimeRange';
 import { useInterpolator } from '../variables/interpolation/useInterpolator';
-import { type AdHocFilterWithLabels, OPERATORS } from './AdhocFiltersContext';
 import type { EditorOption, EditorStep } from './editorState';
+import { type AdHocFilterWithLabels, OPERATORS } from './filterModel';
 
 export interface AdHocFilterOptionsInput {
   step: EditorStep;

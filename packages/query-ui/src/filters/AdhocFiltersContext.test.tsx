@@ -11,7 +11,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { useAdhocFilters } from '../hooks/useAdhocFilters';
 import { UrlStateProvider } from '../url/UrlStateContext';
 import { AdhocFiltersProvider } from './AdhocFiltersContext';
-import type { AdHocFilterWithLabels } from './AdhocFiltersContext';
+import type { AdHocFilterWithLabels } from './filterModel';
 
 function FiltersProbe() {
   const { filters, baseFilters, onAddFilter, onUpdateFilter, onRemoveFilter } =

@@ -9,8 +9,8 @@ import type { DataSourceRef } from '@grafana/schema';
 import { useInterpolator } from './interpolation/useInterpolator';
 import {
   VariableContext,
+  VariableValueOrValues,
   type VariableContextState,
-  type VariableValue,
   type VariableValueOption,
 } from './types';
 import { useVariableContextState } from './useVariableContextState';
@@ -63,7 +63,7 @@ export function DataSourceVariable({
 
   const context = useVariableContextState({
     name,
-    value: uid ? { value: uid, label: uid } : undefined,
+    value: { value: uid, label: uid },
     parent: parentContext,
     skipUrlSync,
     rememberValue: true,
@@ -94,7 +94,7 @@ interface DataSourceOptionsArgs {
 }
 
 function useDataSourceOptions(
-  context: VariableContextState<VariableValue>,
+  context: VariableContextState<VariableValueOrValues>,
   {
     pluginId,
     regex,
