@@ -1,21 +1,14 @@
 import {
   QueryVariable,
-  TimeRangeContextPicker,
-  TimeRangeRefresh,
   useInterpolator,
   VariableValueCombobox,
   VariableValueMultiCombobox,
 } from '@grafana/query-ui';
 import { Stack } from '@grafana/ui';
 
-import { PluginPage } from '../components/PluginPage';
+import { ScenarioPage } from '../components/ScenarioPage';
 import { FAKE_LABELED_DATASOURCE_UID } from '../grafana/constants';
 import { useFakeVariableQueries } from '../grafana/fakeVariableQueries';
-
-const breadcrumbs = [
-  { text: 'Scenarios', url: '/' },
-  { text: 'Query variable demo' },
-];
 
 const datasource = { uid: FAKE_LABELED_DATASOURCE_UID };
 
@@ -54,13 +47,6 @@ function VariableQueries() {
   );
 }
 
-const actions = (
-  <>
-    <TimeRangeContextPicker />
-    <TimeRangeRefresh />
-  </>
-);
-
 /**
  * Two nested query variables against FakeLabeledDataSource. The outer,
  * single-value one lists the label names with `labels()`. The inner,
@@ -71,11 +57,9 @@ const actions = (
  */
 export function QueryVariableDemoPage() {
   return (
-    <PluginPage
-      breadcrumbs={breadcrumbs}
+    <ScenarioPage
       title="Query variable demo"
       description="Two nested query variables, where the inner query depends on the outer variable. Options load when a combobox opens."
-      actions={actions}
     >
       <QueryVariable name="label" datasource={datasource} query="labels()">
         <QueryVariable
@@ -94,6 +78,6 @@ export function QueryVariableDemoPage() {
           </Stack>
         </QueryVariable>
       </QueryVariable>
-    </PluginPage>
+    </ScenarioPage>
   );
 }

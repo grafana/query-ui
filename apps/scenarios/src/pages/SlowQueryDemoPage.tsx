@@ -1,30 +1,14 @@
 import { useSearchParams } from 'react-router-dom';
-import {
-  GridPanelLayout,
-  TimeRangeContextPicker,
-  TimeRangeRefresh,
-} from '@grafana/query-ui';
+import { GridPanelLayout } from '@grafana/query-ui';
 
 import { DemoPanel } from '../components/DemoPanel';
-import { PluginPage } from '../components/PluginPage';
+import { ScenarioPage } from '../components/ScenarioPage';
 import { useFakeQueryStats } from '../grafana/fakeQueryStats';
 
 const panelTitles = ['Slow A', 'Slow B'];
 
 /** Long enough to cancel a panel's query by hand once its cancel button shows. */
 const defaultDelayMs = 10_000;
-
-const breadcrumbs = [
-  { text: 'Scenarios', url: '/' },
-  { text: 'Slow query demo' },
-];
-
-const actions = (
-  <>
-    <TimeRangeContextPicker />
-    <TimeRangeRefresh />
-  </>
-);
 
 /**
  * Panels whose queries take `defaultDelayMs` to answer, or `?delayMs=` from the
@@ -39,11 +23,9 @@ export function SlowQueryDemoPage() {
   const stats = useFakeQueryStats();
 
   return (
-    <PluginPage
-      breadcrumbs={breadcrumbs}
+    <ScenarioPage
       title="Slow query demo"
       description="Slow queries that can be canceled from a panel or from the refresh button."
-      actions={actions}
     >
       <p data-testid="query-stats">
         Running: {stats.running}, completed: {stats.completed}, canceled:{' '}
@@ -54,6 +36,6 @@ export function SlowQueryDemoPage() {
           <DemoPanel key={title} title={title} delayMs={delayMs} />
         ))}
       </GridPanelLayout>
-    </PluginPage>
+    </ScenarioPage>
   );
 }
