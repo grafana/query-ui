@@ -1,15 +1,13 @@
 import {
   AdhocFiltersProvider,
   AdHocFiltersCombobox,
-  TimeRangeContextPicker,
-  TimeRangeRefresh,
   useDataQuery,
   VizConfigBuilder,
   VizPanel,
 } from '@grafana/query-ui';
 import { Stack } from '@grafana/ui';
 
-import { PluginPage } from '../components/PluginPage';
+import { ScenarioPage } from '../components/ScenarioPage';
 import {
   FAKE_LABELED_DATASOURCE_UID,
   FAKE_TIMESERIES_PANEL_ID,
@@ -19,18 +17,6 @@ const fakeTimeSeriesViz = new VizConfigBuilder(
   FAKE_TIMESERIES_PANEL_ID,
   '0.0.0',
 ).build();
-
-const breadcrumbs = [
-  { text: 'Scenarios', url: '/' },
-  { text: 'Adhoc filters demo' },
-];
-
-const actions = (
-  <>
-    <TimeRangeContextPicker />
-    <TimeRangeRefresh />
-  </>
-);
 
 /** Panel A, filtered by whatever AdHocFiltersCombobox has committed to context. */
 function FilteredPanel() {
@@ -58,11 +44,9 @@ function FilteredPanel() {
  */
 export function AdhocFiltersDemoPage() {
   return (
-    <PluginPage
-      breadcrumbs={breadcrumbs}
+    <ScenarioPage
       title="Adhoc filters demo"
       description="Filters a panel with AdHocFiltersCombobox against a fake data source that implements getTagKeys and getTagValues."
-      actions={actions}
     >
       <AdhocFiltersProvider datasource={{ uid: FAKE_LABELED_DATASOURCE_UID }}>
         <Stack direction="column" gap={2}>
@@ -70,6 +54,6 @@ export function AdhocFiltersDemoPage() {
           <FilteredPanel />
         </Stack>
       </AdhocFiltersProvider>
-    </PluginPage>
+    </ScenarioPage>
   );
 }

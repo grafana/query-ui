@@ -2,8 +2,6 @@ import { css } from '@emotion/css';
 import { Profiler } from 'react';
 import {
   QueryVariable,
-  TimeRangeContextPicker,
-  TimeRangeRefresh,
   useDataQuery,
   useInterpolator,
   VariableValueCombobox,
@@ -12,7 +10,7 @@ import {
 } from '@grafana/query-ui';
 import { Button, Stack } from '@grafana/ui';
 
-import { PluginPage } from '../components/PluginPage';
+import { ScenarioPage } from '../components/ScenarioPage';
 import {
   FAKE_LABELED_DATASOURCE_UID,
   FAKE_TIMESERIES_PANEL_ID,
@@ -25,11 +23,6 @@ import {
   useRecordValue,
   useRenderStats,
 } from '../renderStats/renderStats';
-
-const breadcrumbs = [
-  { text: 'Scenarios', url: '/' },
-  { text: 'Query variable demo' },
-];
 
 const datasource = { uid: FAKE_LABELED_DATASOURCE_UID };
 
@@ -140,13 +133,6 @@ function RenderStatsTable() {
 const panelWrapper = css({ height: 240 });
 const heading = css({ margin: 0 });
 
-const actions = (
-  <>
-    <TimeRangeContextPicker />
-    <TimeRangeRefresh />
-  </>
-);
-
 /**
  * Three nested query variables against FakeLabeledDataSource, each narrowed
  * down by the ones above it. Options load when a combobox opens, and a
@@ -158,11 +144,9 @@ const actions = (
  */
 export function QueryVariableDemoPage() {
   return (
-    <PluginPage
-      breadcrumbs={breadcrumbs}
+    <ScenarioPage
       title="Query variable demo"
       description="Three nested query variables, each depending on the one above. Options load when a combobox opens. Counts the renders a change at the top causes below."
-      actions={actions}
     >
       <QueryVariable
         name="env"
@@ -192,6 +176,6 @@ export function QueryVariableDemoPage() {
           </QueryVariable>
         </QueryVariable>
       </QueryVariable>
-    </PluginPage>
+    </ScenarioPage>
   );
 }

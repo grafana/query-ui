@@ -1,12 +1,6 @@
-import {
-  TimeRangeContextPicker,
-  TimeRangeRefresh,
-  useDataQuery,
-  VizConfigBuilder,
-  VizPanel,
-} from '@grafana/query-ui';
+import { useDataQuery, VizConfigBuilder, VizPanel } from '@grafana/query-ui';
 
-import { PluginPage } from '../components/PluginPage';
+import { ScenarioPage } from '../components/ScenarioPage';
 import {
   FAKE_RANDOM_WALK_DATASOURCE_UID,
   FAKE_TIMESERIES_PANEL_ID,
@@ -16,18 +10,6 @@ const fakeTimeSeriesViz = new VizConfigBuilder(
   FAKE_TIMESERIES_PANEL_ID,
   '0.0.0',
 ).build();
-
-const breadcrumbs = [
-  { text: 'Scenarios', url: '/' },
-  { text: 'Many series demo' },
-];
-
-const actions = (
-  <>
-    <TimeRangeContextPicker />
-    <TimeRangeRefresh />
-  </>
-);
 
 /**
  * One panel with three series and a legend. Clicking a legend item shows only
@@ -46,11 +28,9 @@ export function ManySeriesDemoPage() {
   });
 
   return (
-    <PluginPage
-      breadcrumbs={breadcrumbs}
+    <ScenarioPage
       title="Many series demo"
       description="A panel with several series. Click a legend item to toggle series visibility."
-      actions={actions}
     >
       {/* VizPanel fills its parent, and PluginPage gives it no height */}
       <div style={{ height: 400 }}>
@@ -60,6 +40,6 @@ export function ManySeriesDemoPage() {
           data={data.data}
         />
       </div>
-    </PluginPage>
+    </ScenarioPage>
   );
 }
