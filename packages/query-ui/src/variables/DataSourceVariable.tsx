@@ -9,7 +9,7 @@ import type { DataSourceRef } from '@grafana/schema';
 import { useInterpolator } from './interpolation/useInterpolator';
 import {
   VariableContext,
-  VariableValue,
+  type VariableValue,
   type VariableContextState,
   type VariableValueOption,
 } from './types';

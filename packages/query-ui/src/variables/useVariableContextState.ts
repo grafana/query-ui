@@ -75,7 +75,7 @@ export function useVariableContextState<
       : undefined;
   });
 
-  const startValue = rememberedValue ?? input.value ?? { value: '', label: '' };
+  const startValue = rememberedValue ?? input.value;
 
   const [options, setOptions] = React.useState<VariableValueOption[]>(
     () => input.options ?? [],
