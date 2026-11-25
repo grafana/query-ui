@@ -18,6 +18,7 @@ import {
   type VizLegendItem,
 } from '@grafana/ui';
 
+import { useCommitCount } from '../renderStats/renderStats';
 import { FAKE_TIMESERIES_PANEL_ID } from './constants';
 import { createFakePanelPluginMeta } from './pluginMeta';
 
@@ -30,6 +31,9 @@ import { createFakePanelPluginMeta } from './pluginMeta';
  */
 function FakeTimeSeriesPanel({ data, width, height }: PanelProps) {
   const styles = useStyles2(getStyles);
+
+  // How often VizPanel renders the panel plugin itself, for the e2e tests
+  useCommitCount('FakeTimeSeriesPanel');
 
   if (data.state === LoadingState.Loading && data.series.length === 0) {
     return <div className={styles.message}>Loading…</div>;
