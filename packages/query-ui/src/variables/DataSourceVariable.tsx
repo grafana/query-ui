@@ -65,7 +65,7 @@ export function DataSourceVariable({
 
   const context = useVariableContextState({
     name,
-    value: { value: value ?? '', label: value ?? '' },
+    value: { value: value, label: value },
     loading: loading,
     parent: parentContext,
     skipUrlSync,
