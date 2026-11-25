@@ -36,7 +36,7 @@ export function VariableValueCombobox({
     [onChange],
   );
 
-  const comboboxValue = getComboboxValue(value);
+  const comboboxValue = useMemo(() => getComboboxValue(value), [value]);
 
   return (
     <Field label={name} noMargin>
