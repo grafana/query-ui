@@ -206,11 +206,11 @@ describe('useVariableContextState', () => {
       expect(result.current.variable.value).toEqual(b);
     });
 
-    it('Should not remember an empty value', () => {
+    it('Should remember an empty value', () => {
       const cache = new MemoryCache();
       renderState({ value: { value: '' }, rememberValue: true }, '/', cache);
 
-      expect(cache.has('test')).toBe(false);
+      expect(cache.has('test')).toBe(true);
     });
 
     it('Should ignore a remembered list for a single-value variable', () => {
@@ -241,25 +241,31 @@ describe('useVariableContextState', () => {
   describe('When loading is left out', () => {
     const empty = { value: '' };
 
-    it('Should start loading when there is no value', () => {
+    it('Should not set loading when value set to empty string', () => {
       const { result } = renderState({ value: empty });
+
+      expect(result.current.variable.loading).toBe(false);
+    });
+
+    it('Should set loading when value is undefined', () => {
+      const { result } = renderState({ value: { value: undefined } });
 
       expect(result.current.variable.loading).toBe(true);
     });
 
-    it('Should not start loading when there is a value', () => {
+    it('Should not set loading when there is a value', () => {
       const { result } = renderState({ value: a });
 
       expect(result.current.variable.loading).toBe(false);
     });
 
-    it('Should not start loading with a value from the url', () => {
+    it('Should not set loading with a value from the url', () => {
       const { result } = renderState({ value: empty }, '/?var-test=a');
 
       expect(result.current.variable.loading).toBe(false);
     });
 
-    it('Should not start loading with a remembered value', () => {
+    it('Should not set loading with a remembered value', () => {
       const cache = new MemoryCache();
       cache.set('test', b);
 
@@ -326,7 +332,10 @@ describe('useVariableContextState', () => {
 
       act(() => result.current.variable.onOptionsChange([]));
 
-      expect(result.current.variable.value).toEqual({ value: '', label: '' });
+      expect(result.current.variable.value).toEqual({
+        value: undefined,
+        label: undefined,
+      });
     });
 
     it('Should check a value set in the same event', () => {

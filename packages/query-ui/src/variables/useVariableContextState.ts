@@ -85,6 +85,7 @@ export function useVariableContextState<
       ? startValue
       : (fromUrlValue(urlValue, options) as T),
   );
+
   const [loading, setLoading] = React.useState(
     () => input.loading ?? !hasValue(value),
   );
@@ -207,7 +208,7 @@ export function hasValue(value: VariableValueOrValues) {
     return value.some(hasValue);
   }
 
-  return value.value !== undefined && value.value !== '';
+  return value.value != undefined;
 }
 
 /**
@@ -239,7 +240,7 @@ function validateValue(
 
   const selected = findOption(current) ?? first;
 
-  return selected ? toValue(selected) : { value: '', label: '' };
+  return selected ? toValue(selected) : { value: undefined, label: undefined };
 }
 
 function toValue(option: VariableValueOption): VariableValue {

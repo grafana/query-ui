@@ -9,7 +9,7 @@ import {
   type AdHocFilterEditorHandle,
 } from './AdHocFilterEditor';
 import { AdHocFilterPill } from './AdHocFilterPill';
-import type { AdHocFilterWithLabels } from './AdhocFiltersContext';
+import type { AdHocFilterWithLabels } from './filterModel';
 
 export interface AdHocFiltersComboboxProps {
   /** Placeholder for the "add filter" input. Defaults to `+ label = value`. */

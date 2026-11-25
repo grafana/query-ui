@@ -14,11 +14,6 @@ import type { GrafanaTheme2 } from '@grafana/data';
 import { Button, Spinner, useStyles2 } from '@grafana/ui';
 
 import { useAdhocFilters } from '../hooks/useAdhocFilters';
-import {
-  type AdHocFilterWithLabels,
-  isMultiValueOperator,
-  OPERATORS,
-} from './AdhocFiltersContext';
 import { DropdownItem, PlaceholderItem } from './DropdownItem';
 import {
   ERROR_MENU_WIDTH,
@@ -42,6 +37,11 @@ import {
   formatFilterExpression,
   getFilterExpression,
 } from './filterExpression';
+import {
+  type AdHocFilterWithLabels,
+  isMultiValueOperator,
+  OPERATORS,
+} from './filterModel';
 import { MultiValuePill } from './MultiValuePill';
 import { useAdHocFilterOptions } from './useAdHocFilterOptions';
 import { useFloatingInteractions } from './useFloatingInteractions';

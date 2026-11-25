@@ -1,5 +1,7 @@
-import type { AdHocFilterWithLabels } from './AdhocFiltersContext';
-import { isMultiValueOperator } from './AdhocFiltersContext';
+import {
+  type AdHocFilterWithLabels,
+  isMultiValueOperator,
+} from './filterModel';
 
 /**
  * How filters are written to the url, one value per filter.
