@@ -13,11 +13,14 @@ import {
   type TestDataSourceResponse,
 } from '@grafana/data';
 
+import { trackVariableQuery } from './fakeVariableQueries';
+
 export interface FakeLabeledQuery extends DataQuery {
   alias?: string;
 }
 
-const TAG_VALUES: Record<string, string[]> = {
+/** The labels the fake series carry, each with its values. */
+const LabelIndex: Record<string, string[]> = {
   service: ['checkout', 'cart', 'auth'],
   env: ['prod', 'staging', 'dev'],
   region: ['us-east', 'us-west', 'eu'],
@@ -55,13 +58,32 @@ export class FakeLabeledDataSource extends DataSourceApi<FakeLabeledQuery> {
   async getTagKeys(
     _options: DataSourceGetTagKeysOptions<FakeLabeledQuery>,
   ): Promise<MetricFindValue[]> {
-    return Object.keys(TAG_VALUES).map((key) => ({ text: key }));
+    return Object.keys(LabelIndex).map((key) => ({ text: key }));
   }
 
   async getTagValues(
     options: DataSourceGetTagValuesOptions<FakeLabeledQuery>,
   ): Promise<MetricFindValue[]> {
-    return (TAG_VALUES[options.key] ?? []).map((value) => ({ text: value }));
+    return (LabelIndex[options.key] ?? []).map((value) => ({ text: value }));
+  }
+
+  /**
+   * Variable query (legacy variable support): the query is `labels()` for the
+   * label names, or `labelValues(<label>)` for the values of one label. The
+   * result is narrowed to the ones containing the search filter, and any other
+   * query returns nothing. A short delay makes the loading state visible.
+   */
+  async metricFindQuery(
+    query: string,
+    options?: { searchFilter?: string },
+  ): Promise<MetricFindValue[]> {
+    trackVariableQuery({ query, searchFilter: options?.searchFilter });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const search = options?.searchFilter?.toLowerCase() ?? '';
+
+    return findLabelValues(query)
+      .filter((value) => value.toLowerCase().includes(search))
+      .map((value) => ({ text: value }));
   }
 
   async testDatasource(): Promise<TestDataSourceResponse> {
@@ -70,6 +92,18 @@ export class FakeLabeledDataSource extends DataSourceApi<FakeLabeledQuery> {
       message: 'Fake labeled data source is working',
     };
   }
+}
+
+const LABEL_VALUES_QUERY = /^labelValues\((\w+)\)$/;
+
+function findLabelValues(query: string): string[] {
+  if (query === 'labels()') {
+    return Object.keys(LabelIndex);
+  }
+
+  const label = LABEL_VALUES_QUERY.exec(query)?.[1];
+
+  return label ? (LabelIndex[label] ?? []) : [];
 }
 
 function buildFrame(

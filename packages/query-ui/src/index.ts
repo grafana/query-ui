@@ -68,8 +68,14 @@ export {
 export { DefineVariable } from './variables/DefineVariable';
 export { useInterpolator } from './variables/interpolation/useInterpolator';
 export {
+  QueryVariable,
+  type QueryVariableProps,
+} from './variables/query/QueryVariable';
+export {
+  useVariableOptionsLoader,
   useVariableOptionsQuery,
   type VariableOptionsQueryProps,
+  type VariableQueryDefinition,
 } from './variables/query/useVariableOptionsQuery';
 export { VariableTestQuery } from './variables/testquery/VariableTestQuery';
 export {

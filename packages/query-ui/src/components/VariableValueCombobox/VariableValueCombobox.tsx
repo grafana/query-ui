@@ -1,58 +1,76 @@
 import { isArray } from 'lodash';
+import { useCallback, useMemo } from 'react';
 import { Combobox, type ComboboxOption, Field } from '@grafana/ui';
 
 import { useVariable } from '../../hooks/useVariable';
-import type {
-  VariableContextState,
-  VariableValue,
-} from '../../variables/types';
+import type { VariableValue, VariableValueOption } from '../../variables/types';
 
 interface VariableValueComboboxProps {
   name: string;
 }
 
 export function VariableValueCombobox({ name }: VariableValueComboboxProps) {
-  const variable = useVariable<VariableValue>(name);
-  const options =
-    variable.options?.map((x) => ({
-      value: String(x.value),
-      label: x.label ?? String(x.value),
-    })) ?? [];
+  const { value, loadOptions, options, loading, onChange } =
+    useVariable<VariableValue>(name);
 
-  const onChange = (newValue: ComboboxOption<string>) => {
-    variable.onChange({
-      value: newValue.value,
-      label: newValue.label ?? newValue.value,
-    });
-  };
+  const comboboxOptions = useMemo(
+    () =>
+      loadOptions
+        ? (search: string) => loadOptions(search).then(toComboboxOptions)
+        : toComboboxOptions(options ?? []),
+    [loadOptions, options],
+  );
 
-  const value = getComboboxValue(variable);
+  const comboboxOnChange = useCallback(
+    (newValue: ComboboxOption<string>) => {
+      onChange({
+        value: newValue.value,
+        label: newValue.label ?? newValue.value,
+      });
+    },
+    [onChange],
+  );
+
+  const comboboxValue = getComboboxValue(value);
 
   return (
     <Field label={name} noMargin>
       <Combobox
         id={`variable-${name}`}
-        loading={variable.loading}
-        value={value}
-        options={options}
+        loading={loading}
+        value={comboboxValue}
+        options={comboboxOptions}
         width="auto"
         minWidth={20}
-        onChange={onChange}
+        onChange={comboboxOnChange}
       />
     </Field>
   );
 }
 
-function getComboboxValue(variable: VariableContextState<VariableValue>) {
-  if (isArray(variable.value)) {
+function getComboboxValue(value: VariableValue) {
+  if (isArray(value.value)) {
     throw new Error(
       'VariableValueCombobox does not support multi-value variables',
     );
   }
 
-  if (typeof variable.value.value === 'string') {
-    return variable.value.value;
+  if (value.value === undefined || value.value === '') {
+    return null;
   }
 
-  return null;
+  // An option rather than a plain value, so the label shows before any options load
+  return {
+    value: String(value.value),
+    label: value.label ?? String(value.value),
+  };
+}
+
+export function toComboboxOptions(
+  options: VariableValueOption[],
+): Array<ComboboxOption<string>> {
+  return options.map((x) => ({
+    value: String(x.value),
+    label: x.label ?? String(x.value),
+  }));
 }

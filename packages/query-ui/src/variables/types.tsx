@@ -27,6 +27,12 @@ export interface VariableContextState<T = unknown> {
   loading?: boolean;
   error?: Error | null;
   parent?: VariableContextState<unknown> | undefined;
+  /**
+   * Fetches the options on demand, filtered by what the user typed. A variable
+   * sets this when its options are too costly to fetch up front, and pickers use
+   * it over `options` when it is there.
+   */
+  loadOptions?(searchFilter: string): Promise<VariableValueOption[]>;
   getValue(fieldPath?: string, returnLabel?: boolean): unknown;
   onOptionsChange(options: VariableValueOption[]): void;
   onChange(value: T): void;

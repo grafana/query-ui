@@ -1,12 +1,10 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { stringToJsRegex } from '@grafana/data';
 import {
   getDataSourceInstanceList,
   getDefaultDataSourceInstanceListItem,
 } from '@grafana/plugin-compat/datasources';
 
-import { useCache } from '../caching/CacheContext';
-import { useVariableContextState } from './DefineVariable';
 import { useInterpolator } from './interpolation/useInterpolator';
 import {
   VariableContext,
@@ -14,6 +12,7 @@ import {
   type VariableValue,
   type VariableValueOption,
 } from './types';
+import { useVariableContextState } from './useVariableContextState';
 
 export const DATA_SOURCE_DEFAULT_OPTION_VALUE = 'default';
 export const NO_DATA_SOURCES_FOUND_ERROR = 'No data sources found';
@@ -63,35 +62,15 @@ export function DataSourceVariable({
   children,
 }: DataSourceVariableProps) {
   const parentContext = useContext(VariableContext);
-  const cache = useCache();
-
-  // Read once: the state below only takes its initial value from this on mount
-  const [cachedValue] = useState(() => cache.get<VariableValue>(name));
-  const initialValue = cachedValue ?? {
-    value: value ?? '',
-    label: value ?? '',
-  };
 
   const context = useVariableContextState({
     name,
-    value: initialValue,
+    value: { value: value, label: value },
     loading: loading,
     parent: parentContext,
     skipUrlSync,
+    rememberValue: true,
   });
-
-  // Remember every selection under the variable name, whether it came from the options
-  // resolving or from the user, so a remount picks up where this one left off. The closest
-  // cache from `CacheContext` holds it; give a subtree its own `CacheProvider` to scope it.
-  const currentValue = context.value;
-  useEffect(() => {
-    // Nothing selected yet, or no options to select from
-    if (currentValue.value === undefined || currentValue.value === '') {
-      return;
-    }
-
-    cache.set<VariableValue>(name, currentValue);
-  }, [cache, name, currentValue]);
 
   // Interpolated against the parent context, so the regex can reference variables defined above this one
   const [interpolatedRegex, regexLoading] = useInterpolator(regex);
@@ -126,19 +105,12 @@ function useDataSourceOptions(
     defaultOptionEnabled,
   }: DataSourceOptionsArgs,
 ) {
-  const { onChange, onOptionsChange, onSetLoading, onSetError } = context;
-
-  // Read the latest value when options resolve without re-running the effect on every value change
-  // (declared before the loading effect so it runs first)
-  const valueRef = useRef(context.value);
-  useEffect(() => {
-    valueRef.current = context.value;
-  }, [context.value]);
+  const { onOptionsChange, onSetLoading, onSetError } = context;
 
   useEffect(() => {
+    // Handing the options over checks the value against them and ends loading
     if (!pluginId) {
       onOptionsChange([]);
-      onSetLoading(false);
       return;
     }
 
@@ -158,11 +130,9 @@ function useDataSourceOptions(
         }
 
         onOptionsChange(options);
-        onChange(validateValue(valueRef.current, options));
         onSetError(
           options.length === 0 ? new Error(NO_DATA_SOURCES_FOUND_ERROR) : null,
         );
-        onSetLoading(false);
       })
       .catch((err: unknown) => {
         if (cancelled) {
@@ -181,7 +151,6 @@ function useDataSourceOptions(
     regex,
     regexLoading,
     defaultOptionEnabled,
-    onChange,
     onOptionsChange,
     onSetLoading,
     onSetError,
@@ -232,23 +201,6 @@ export async function getDataSourceOptions({
   }
 
   return options;
-}
-
-/**
- * Keeps the current value when it is one of the options, otherwise picks the first option.
- */
-function validateValue(
-  current: VariableValue,
-  options: VariableValueOption[],
-): VariableValue {
-  const match = options.find((option) => option.value === current.value);
-  const selected = match ?? options[0];
-
-  if (!selected) {
-    return { value: '', label: '' };
-  }
-
-  return { value: selected.value, label: selected.label };
 }
 
 function matches(name: string, regex?: RegExp) {

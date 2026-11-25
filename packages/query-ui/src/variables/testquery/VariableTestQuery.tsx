@@ -20,24 +20,22 @@ export function useVariableTestQuery(
   query: string,
   delay?: number,
 ) {
-  const { onChange, onSetLoading, onOptionsChange } =
-    useVariable<VariableValue>(name);
+  const { onOptionsChange } = useVariable<VariableValue>(name);
 
   useEffect(() => {
     const cancel = setTimeout(() => {
       const nodes = queryMetricTree(query || '');
 
+      // Handing the options over checks the value against them and ends loading
       if (nodes.length > 0) {
-        onChange({ value: nodes[0].name, label: nodes[0].name });
         onOptionsChange(
           nodes.map((node) => ({ value: node.name, label: node.name })),
         );
-        onSetLoading(false);
       }
     }, delay || 0);
 
     return () => {
       clearTimeout(cancel);
     };
-  }, [query, delay, onChange, onSetLoading, onOptionsChange]);
+  }, [query, delay, onOptionsChange]);
 }

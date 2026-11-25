@@ -6,6 +6,7 @@ import type {
   VariableContextState,
   VariableValue,
 } from '../../variables/types';
+import { toComboboxOptions } from '../VariableValueCombobox/VariableValueCombobox';
 
 interface VariableValueMultiComboboxProps {
   name: string;
@@ -15,11 +16,11 @@ export function VariableValueMultiCombobox({
   name,
 }: VariableValueMultiComboboxProps) {
   const variable = useVariable<VariableValue[]>(name);
-  const options =
-    variable.options?.map((x) => ({
-      value: String(x.value),
-      label: x.label ?? String(x.value),
-    })) ?? [];
+  const { loadOptions } = variable;
+  // Loaded when the combobox opens and as the user types, if the variable supports it
+  const options = loadOptions
+    ? (search: string) => loadOptions(search).then(toComboboxOptions)
+    : toComboboxOptions(variable.options ?? []);
 
   const onChange = (newValues: Array<ComboboxOption<string>>) => {
     variable.onChange(
@@ -56,7 +57,11 @@ function getMultiComboboxValue(
     );
   }
 
+  // Options rather than plain values, so the labels show before any options load
   return variable.value
     .filter((x) => x.value !== undefined)
-    .map((x) => String(x.value));
+    .map((x) => ({
+      value: String(x.value),
+      label: x.label ?? String(x.value),
+    }));
 }

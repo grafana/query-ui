@@ -40,7 +40,7 @@ export function DrilldownMetrics() {
       <DataSourceVariable name="ds" loading={true} pluginId="prometheus">
         <AdhocFiltersProvider datasource={trailDS}>
           <AdhocFiltersVariable name={VAR_FILTERS}>
-            <DefineVariable name={VAR_METRIC}>
+            <DefineVariable name={VAR_METRIC} value={{ value: '' }}>
               <Stack direction="column" gap={2}>
                 <Stack alignItems="flex-end">
                   <VariableValueCombobox name="ds" />

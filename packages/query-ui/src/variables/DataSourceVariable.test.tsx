@@ -143,10 +143,10 @@ describe('DataSourceVariable', () => {
   });
 
   describe('When empty plugin id is provided', () => {
-    it('Should default to empty options and empty value', async () => {
+    it('Should default to undefined options and undefined value', async () => {
       const state = await renderVariable({ pluginId: '' });
 
-      expect(state.value).toEqual({ value: '', label: '' });
+      expect(state.value).toEqual({ value: undefined, label: undefined });
       expect(state.options).toEqual([]);
       expect(getDataSourceInstanceListMock).not.toHaveBeenCalled();
     });
@@ -158,7 +158,7 @@ describe('DataSourceVariable', () => {
         pluginId: 'non-existent-datasource',
       });
 
-      expect(state.value).toEqual({ value: '', label: '' });
+      expect(state.value).toEqual({ value: undefined, label: undefined });
       expect(state.error).toEqual('No data sources found');
     });
 
