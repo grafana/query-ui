@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import type { AdHocFilterWithLabels } from './AdhocFiltersContext';
 import { getDropdownItems, searchOptions } from './editorOptions';
 import {
   buildFilter,
@@ -9,6 +8,7 @@ import {
   type EditorState,
   initEditorState,
 } from './editorState';
+import type { AdHocFilterWithLabels } from './filterModel';
 
 function run(state: EditorState, ...actions: EditorAction[]): EditorState {
   return actions.reduce(editorReducer, state);

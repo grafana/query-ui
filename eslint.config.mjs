@@ -2,6 +2,7 @@ import * as emotionModule from '@emotion/eslint-plugin';
 import eslint from '@eslint/js';
 import prettier from 'eslint-config-prettier';
 import cssPlugin from 'eslint-plugin-css';
+import importPlugin from 'eslint-plugin-import';
 import perfectionist from 'eslint-plugin-perfectionist';
 import pluginPrettier from 'eslint-plugin-prettier';
 import reactHooks from 'eslint-plugin-react-hooks';
@@ -11,6 +12,7 @@ import tseslint from 'typescript-eslint';
 // `@emotion/eslint-plugin` ships CJS without a default-export marker, so the
 // plugin object arrives via the namespace's `default` under Node ESM interop.
 const emotion = emotionModule.default ?? emotionModule;
+const importExtensions = ['.ts', '.tsx', '.js', '.jsx'];
 
 export default defineConfig(
   eslint.configs.recommended,
@@ -69,6 +71,15 @@ export default defineConfig(
         },
       ],
     },
+  },
+  {
+    files: ['packages/query-ui/src/**/*.{ts,tsx}'],
+    plugins: { import: importPlugin },
+    settings: {
+      'import/extensions': importExtensions,
+      'import/resolver': { node: { extensions: importExtensions } },
+    },
+    rules: { 'import/no-cycle': ['error', { ignoreExternal: true }] },
   },
   // Emotion CSS-in-JS authoring. `eslint-plugin-css` validates the CSS
   // definition objects themselves (unknown properties, duplicate keys,
