@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { TimeRangeContextProvider, UrlStateProvider } from '@grafana/query-ui';
 
 import { AdhocFiltersDemoPage } from './pages/AdhocFiltersDemoPage';
+import { CascadingVariablesDemoPage } from './pages/CascadingVariablesDemoPage';
 import { HomePage } from './pages/HomePage';
 import { LazyGridDemoPage } from './pages/LazyGridDemoPage';
 import { ManySeriesDemoPage } from './pages/ManySeriesDemoPage';
@@ -44,6 +45,10 @@ export function App() {
               <Route
                 path="/query-variable-demo"
                 element={<QueryVariableDemoPage />}
+              />
+              <Route
+                path="/cascading-variables-demo"
+                element={<CascadingVariablesDemoPage />}
               />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

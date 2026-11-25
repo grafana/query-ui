@@ -103,21 +103,20 @@ export function QueryVariable({
   );
   const loadOptions = useVariableOptionsLoader(queryProps);
 
-  // Handing the options over checks the value against them and ends loading
+  // The value can't be trusted from the render in which what it depends on
+  // changes. Deriving that here, rather than setting it from the effect below,
+  // keeps the variables and queries below from running a commit with the new
+  // parent value, the old value of this one, and no sign that it is stale.
+  const checking = dependenciesLoading || checkedKey !== dependenciesKey;
+
+  // Handing the options over checks the value against them
   useEffect(() => {
     // Wait for the variables the query depends on
-    if (dependenciesLoading) {
-      onSetLoading(true);
-      return;
-    }
-
-    if (checkedKey === dependenciesKey) {
-      onSetLoading(false);
+    if (dependenciesLoading || checkedKey === dependenciesKey) {
       return;
     }
 
     let cancelled = false;
-    onSetLoading(true);
 
     loadOptions()
       .then((options) => {
@@ -136,6 +135,8 @@ export function QueryVariable({
 
         onSetError(err instanceof Error ? err : new Error(String(err)));
         onSetLoading(false);
+        // Failed, but checked: the value stays until the dependencies change
+        setCheckedKey(dependenciesKey);
       });
 
     return () => {
@@ -151,9 +152,10 @@ export function QueryVariable({
     onSetLoading,
   ]);
 
+  const loading = context.loading || checking;
   const queryContext = useMemo(
-    () => ({ ...context, loadOptions }),
-    [context, loadOptions],
+    () => ({ ...context, loading, loadOptions }),
+    [context, loading, loadOptions],
   );
 
   return (

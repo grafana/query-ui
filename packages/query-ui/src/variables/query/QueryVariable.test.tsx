@@ -9,6 +9,7 @@ import { MemoryCache } from '../../caching/MemoryCache';
 import { useVariable } from '../../hooks/useVariable';
 import { TimeRangeContextProvider } from '../../time/TimeRangeContext';
 import { DefineVariable } from '../DefineVariable';
+import { useInterpolator } from '../interpolation/useInterpolator';
 import type {
   VariableValue,
   VariableValueOption,
@@ -45,11 +46,23 @@ const web = { value: 'web', label: 'web' };
 let loadOptions:
   ((search: string) => Promise<VariableValueOption[]>) | undefined;
 
+/**
+ * `<label>:<value>/<loading>` each time one changes, as the probe commits it.
+ * `label` is the variable the chained tests reference.
+ */
+let commits: string[] = [];
+
 function Probe({ name }: { name: string }) {
   const variable = useVariable<VariableValueOrValues>(name);
   React.useEffect(() => {
     loadOptions = variable.loadOptions;
   });
+
+  const [label] = useInterpolator('${label}');
+  const state = `${label}:${variable.getValue()}/${Boolean(variable.loading)}`;
+  React.useEffect(() => {
+    commits.push(state);
+  }, [state]);
 
   return (
     <>
@@ -92,6 +105,7 @@ describe('QueryVariable', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     loadOptions = undefined;
+    commits = [];
 
     vi.mocked(getDataSourceSrv).mockReturnValue({
       get: async () => ({ name: 'legacy', type: 'legacy', metricFindQuery }),
@@ -244,6 +258,19 @@ describe('QueryVariable', () => {
         expect(screen.getByTestId('value')).toHaveTextContent('api-1'),
       );
       expect(screen.getByTestId('loading')).toHaveTextContent('false');
+    });
+
+    it('Should be loading from the commit in which the reference changes', async () => {
+      renderChained(web);
+      commits = [];
+
+      await act(async () => screen.getByText('pod').click());
+      await waitFor(() =>
+        expect(screen.getByTestId('value')).toHaveTextContent('api-1'),
+      );
+
+      // Never `pod:web/false`, the old value looking checked against `pod`
+      expect(commits).toEqual(['pod:web/true', 'pod:api-1/false']);
     });
 
     it('Should not run the query again while the references stay the same', async () => {
