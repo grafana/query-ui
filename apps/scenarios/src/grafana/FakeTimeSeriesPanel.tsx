@@ -68,7 +68,7 @@ function FakeTimeSeriesPanel({ data, width, height }: PanelProps) {
             <Sparkline key={name} name={name} field={field} />
           ))}
       </div>
-      {legendItems.length > 1 && (
+      {legendItems.length > 0 && (
         <VizLegend
           placement="bottom"
           displayMode={LegendDisplayMode.List}
@@ -122,7 +122,6 @@ function Sparkline({ name, field }: Series) {
 
   return (
     <div className={styles.series} data-testid={`fake-series ${name}`}>
-      <div className={styles.seriesName}>{name}</div>
       <svg
         viewBox="0 0 100 100"
         preserveAspectRatio="none"

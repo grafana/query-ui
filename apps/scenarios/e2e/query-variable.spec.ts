@@ -13,7 +13,9 @@ import { expect, type Page, test } from '@playwright/test';
 // (through a React Profiler), and of FakeTimeSeriesPanel, the panel plugin
 // VizPanel renders. They also record each value the hooks return, and the fake
 // data source records each `DataSourceApi.metricFindQuery` (variable query)
-// and `DataSourceApi.query` (data query) it receives.
+// and `DataSourceApi.query` (data query) it receives. The commits of each
+// variable count as `useVariableContextState(<name>)`, through a wrapper
+// vite.config.ts swaps in for that hook.
 // The page exposes all of it as `window.__renderStats`. Options only load when
 // a combobox opens, or when a variable has to check its value.
 
@@ -89,6 +91,12 @@ async function readStats(page: Page) {
     useDataQuery: renders.useDataQuery ?? 0,
     VizPanel: renders.VizPanel ?? 0,
     FakeTimeSeriesPanel: renders.FakeTimeSeriesPanel ?? 0,
+    'useVariableContextState(env)':
+      renders['useVariableContextState(env)'] ?? 0,
+    'useVariableContextState(app)':
+      renders['useVariableContextState(app)'] ?? 0,
+    'useVariableContextState(pod)':
+      renders['useVariableContextState(pod)'] ?? 0,
   };
 
   return { commits, values };
@@ -177,6 +185,9 @@ test.describe('cascading query variables', () => {
       useDataQuery: 4,
       VizPanel: 2,
       FakeTimeSeriesPanel: 4,
+      'useVariableContextState(env)': 1,
+      'useVariableContextState(app)': 2,
+      'useVariableContextState(pod)': 3,
     });
   });
 
@@ -212,10 +223,14 @@ test.describe('cascading query variables', () => {
       useDataQuery: 3,
       VizPanel: 1,
       FakeTimeSeriesPanel: 3,
+      'useVariableContextState(env)': 0,
+      'useVariableContextState(app)': 1,
+      'useVariableContextState(pod)': 2,
     });
   });
 
-  // The baseline: no variable changes, so only the data query runs again
+  // The baseline: no variable changes, so only the data query runs again.
+  // Each variable still commits once, but nothing below it re-renders.
   test('a refresh only reruns the data query', async ({ page }) => {
     await gotoProd(page);
 
@@ -239,6 +254,9 @@ test.describe('cascading query variables', () => {
       useDataQuery: 2,
       VizPanel: 2,
       FakeTimeSeriesPanel: 2,
+      'useVariableContextState(env)': 1,
+      'useVariableContextState(app)': 1,
+      'useVariableContextState(pod)': 1,
     });
   });
 });
