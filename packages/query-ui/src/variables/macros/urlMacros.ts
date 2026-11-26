@@ -1,5 +1,3 @@
-import { config } from '@grafana/runtime';
-
 import {
   formatValue,
   type FormatVariable,
@@ -9,6 +7,7 @@ import type {
   InterpolationFormatParameter,
   QueryUIScopedVars,
 } from '../types';
+import { locationUtil } from '@grafana/data';
 
 /**
  * Handles `${__url}`, `${__url.path}` and `${__url.params}`, read from the
@@ -32,16 +31,16 @@ export function urlMacro(
         return match;
       }
 
-      const subUrl = config.appSubUrl ?? '';
-
       switch (fieldPath ?? '') {
         case 'params':
           return new UrlParamsFormatter(name, location.search);
         case 'path':
-          return subUrl + location.pathname;
+          return locationUtil.assureBaseUrl(location.pathname);
         case '':
         default:
-          return subUrl + location.pathname + location.search;
+          return (
+            locationUtil.assureBaseUrl(location.pathname) + location.search
+          );
       }
     },
   };

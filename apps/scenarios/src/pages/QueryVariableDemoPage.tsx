@@ -4,6 +4,7 @@ import {
   QueryVariable,
   useDataQuery,
   useInterpolator,
+  useUrlState,
   VariableValueCombobox,
   VizConfigBuilder,
   VizPanel,
@@ -87,6 +88,25 @@ function DataQueryProbe() {
 }
 
 /**
+ * Bumps a url parameter that no variable or time range reads, to check what a
+ * location change on its own makes the probes do.
+ */
+function UrlCounterButton() {
+  const [url, setUrl] = useUrlState<{ urlCounter: string }>(['urlCounter']);
+  const count = Number(url.urlCounter ?? 0);
+
+  return (
+    <Button
+      size="sm"
+      variant="secondary"
+      onClick={() => setUrl({ urlCounter: String(count + 1) })}
+    >
+      Increment urlCounter ({count})
+    </Button>
+  );
+}
+
+/**
  * What the probes counted since the last reset. It sits outside the probed
  * components, so its own renders don't count.
  */
@@ -103,6 +123,7 @@ function RenderStatsTable() {
         <Button size="sm" variant="secondary" onClick={resetRenderStats}>
           Reset counts
         </Button>
+        <UrlCounterButton />
       </Stack>
       <table data-testid="render-stats">
         <thead>

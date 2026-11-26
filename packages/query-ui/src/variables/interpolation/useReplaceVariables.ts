@@ -13,6 +13,7 @@ import { interpolate } from './useInterpolator';
 export function useReplaceVariables(): InterpolateFunction {
   const variableContext = useContext(VariableContext);
   const timeRange = useTimeRange();
+
   // Subscribing to the location gives a new function on every navigation, so a
   // component that interpolates `${__url}` renders again with the new URL.
   const location = useRouterLocation();

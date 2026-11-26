@@ -1,9 +1,9 @@
 import type { Location } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
-import { config } from '@grafana/runtime';
 
 import { interpolate } from '../interpolation/useInterpolator';
 import type { QueryUIScopedVars } from '../types';
+import { GrafanaConfig, locationUtil } from '@grafana/data';
 
 /** Interpolates `target` with `url` (path and query) as the current location. */
 function interpolateWithUrl(target: string, url: string) {
@@ -37,7 +37,11 @@ describe('url macros', () => {
   });
 
   it('${__url} and ${__url.path} includes grafana sub path', () => {
-    config.appSubUrl = '/grafana';
+    locationUtil.initialize({
+      config: { appSubUrl: '/grafana' } as GrafanaConfig,
+      getVariablesUrlParams: () => ({}),
+      getTimeRangeForUrl: () => ({ from: 'now-7d', to: 'now' }),
+    });
 
     const url = '/my-plugin/my-page?from=now-5m&to=now';
     expect(interpolateWithUrl('${__url}', url)).toBe(
@@ -47,7 +51,11 @@ describe('url macros', () => {
       '/grafana/my-plugin/my-page',
     );
 
-    config.appSubUrl = '';
+    locationUtil.initialize({
+      config: { appSubUrl: '/' } as GrafanaConfig,
+      getVariablesUrlParams: () => ({}),
+      getTimeRangeForUrl: () => ({ from: 'now-7d', to: 'now' }),
+    });
   });
 
   it('Can get only state via ${__url.params}', () => {
