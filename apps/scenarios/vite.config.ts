@@ -1,13 +1,51 @@
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const packagesDir = path.resolve(__dirname, '../../packages');
 
+/**
+ * Points query-ui's imports of useVariableContextState at a wrapper that counts
+ * each variable's commits for the render stats. The wrapper imports the real
+ * hook itself, so its own import is left alone. This only affects this app:
+ * query-ui's build and tests import the hook directly.
+ */
+function probeVariableContextState(): Plugin {
+  const hook = path.join(
+    packagesDir,
+    'query-ui/src/variables/useVariableContextState.ts',
+  );
+  const probe = path.resolve(
+    __dirname,
+    'src/renderStats/useVariableContextStateProbe.ts',
+  );
+
+  return {
+    name: 'probe-variable-context-state',
+    enforce: 'pre',
+    async resolveId(source, importer, options) {
+      if (
+        !importer ||
+        importer === probe ||
+        !source.endsWith('/useVariableContextState')
+      ) {
+        return null;
+      }
+
+      const resolved = await this.resolve(source, importer, {
+        ...options,
+        skipSelf: true,
+      });
+
+      return resolved?.id === hook ? probe : null;
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [probeVariableContextState(), react()],
   resolve: {
     alias: [
       // Resolve the workspace package to its TypeScript source rather than the
