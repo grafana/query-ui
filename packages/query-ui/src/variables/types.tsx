@@ -72,7 +72,10 @@ export type InterpolationFormatParameter =
  * `${__url.params:exclude:from}`.
  */
 export interface CustomVariableValue {
-  /** Receives the format named in the expression, or the default format. */
+  /**
+   * Receives the format named in the expression, or the default format. What
+   * it returns goes into the result as is, without being interpolated again.
+   */
   formatter(formatNameOrFn?: InterpolationFormatParameter): string;
 }
 

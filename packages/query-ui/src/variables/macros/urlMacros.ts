@@ -1,6 +1,9 @@
 import { config } from '@grafana/runtime';
 
-import type { FormatVariable } from '../interpolation/formatRegistry';
+import {
+  formatValue,
+  type FormatVariable,
+} from '../interpolation/formatRegistry';
 import type {
   CustomVariableValue,
   InterpolationFormatParameter,
@@ -33,7 +36,7 @@ export function urlMacro(
 
       switch (fieldPath ?? '') {
         case 'params':
-          return new UrlParamsFormatter(location.search);
+          return new UrlParamsFormatter(name, location.search);
         case 'path':
           return subUrl + location.pathname;
         case '':
@@ -45,20 +48,30 @@ export function urlMacro(
 }
 
 class UrlParamsFormatter implements CustomVariableValue {
-  public constructor(private _search: string) {}
+  public constructor(
+    private _name: string,
+    private _search: string,
+  ) {}
 
   public formatter(options?: InterpolationFormatParameter): string {
-    if (!options || typeof options !== 'string') {
-      return this._search;
+    if (typeof options === 'string') {
+      const [mode, paramList] = options.split(':');
+
+      if (paramList && (mode === 'exclude' || mode === 'include')) {
+        return this._filter(mode, paramList.split(','));
+      }
     }
 
-    const [mode, paramList] = options.split(':');
+    // Anything else is a format like any other, so `${__url.params:html}` is
+    // escaped instead of handed back as is.
+    return formatValue(
+      { name: this._name, getValue: () => this._search },
+      this._search,
+      options,
+    );
+  }
 
-    if (!paramList || (mode !== 'exclude' && mode !== 'include')) {
-      return this._search;
-    }
-
-    const names = paramList.split(',');
+  private _filter(mode: 'exclude' | 'include', names: string[]): string {
     const params = new URLSearchParams(this._search);
 
     // Collect the keys first: deleting while iterating skips entries.

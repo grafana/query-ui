@@ -77,6 +77,25 @@ describe('url macros', () => {
     ).toBe('?from=now-5m&var-test=hello');
   });
 
+  it('Applies other formats to ${__url.params} like to any value', () => {
+    const url = '/my-plugin/my-page?a=1&b=2';
+
+    expect(interpolateWithUrl('${__url.params:html}', url)).toBe(
+      '?a=1&amp;b=2',
+    );
+    expect(interpolateWithUrl('${__url.params:percentencode}', url)).toBe(
+      '%3Fa%3D1%26b%3D2',
+    );
+  });
+
+  it('Does not interpolate the variable expressions a URL holds', () => {
+    const url = '/my-plugin/my-page?a=${__url.params}&b=$__url';
+
+    expect(interpolateWithUrl('${__url.params}', url)).toBe(
+      '?a=${__url.params}&b=$__url',
+    );
+  });
+
   it('Leaves the expression intact when there is no location', () => {
     expect(interpolate('${__url.path}', undefined, {})[0]).toBe(
       '${__url.path}',
