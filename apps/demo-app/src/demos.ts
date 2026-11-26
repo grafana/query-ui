@@ -5,9 +5,10 @@ import { PanelGridLayoutDemo } from 'components/PanelGridLayoutDemo';
 import { SlowQueryDemo } from 'components/SlowQueryDemo';
 import { VariablesDemo } from 'components/VariablesDemo';
 import { DrilldownMetrics } from 'drilldown-metrics/DrilldownMetrics';
+import { TabsAndSubPagesDemo } from 'tabs-and-sub-pages/TabsAndSubPagesDemo';
 
 export interface DemoScenario {
-  /** Route path relative to the plugin base URL. */
+  /** Route path relative to the plugin base URL. The demo can add routes of its own below it. */
   route: string;
   label: string;
   component: ComponentType;
@@ -24,4 +25,5 @@ export const demos: DemoScenario[] = [
   { route: 'drilldown-metrics', label: 'Drilldown metrics demo', component: DrilldownMetrics },
   { route: 'slow-query-demo', label: 'Slow query demo', component: SlowQueryDemo },
   { route: 'many-series-demo', label: 'Many series demo', component: ManySeriesDemo },
+  { route: 'tabs-and-sub-pages-demo', label: 'Tabs and sub pages demo', component: TabsAndSubPagesDemo },
 ];
