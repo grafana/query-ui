@@ -8,7 +8,7 @@ import { plainTimeSeriesGraph } from './sharedVisualizations';
 export function DataSourceVariableDemo() {
   return (
     <PageWrapper title="Data Source variables demo">
-      <DataSourceVariable name="ds" loading={true} pluginId="grafana-testdata-datasource">
+      <DataSourceVariable name="ds" pluginId="grafana-testdata-datasource">
         <QueryAndGraph />
       </DataSourceVariable>
     </PageWrapper>
