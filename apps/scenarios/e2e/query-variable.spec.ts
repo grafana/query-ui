@@ -259,4 +259,19 @@ test.describe('cascading query variables', () => {
       'useVariableContextState(pod)': 1,
     });
   });
+
+  test('filters the label options as the user types, without a new query', async ({
+    page,
+  }) => {
+    await gotoWithValues(page);
+
+    await labelInput(page).click();
+    await expect(page.getByRole('option')).toHaveCount(3);
+
+    // labels() doesn't reference __searchFilter, so the search can't be sent
+    await labelInput(page).fill('re');
+
+    await expect(page.getByRole('option')).toHaveText(['region']);
+    await expect(variableQueries(page)).toHaveText(['labels()']);
+  });
 });

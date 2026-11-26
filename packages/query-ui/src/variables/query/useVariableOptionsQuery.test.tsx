@@ -414,6 +414,36 @@ describe('useVariableOptionsQuery', () => {
         runRequestMock.mock.calls[1][1].scopedVars.__searchFilter.value,
       ).toBe('muu!');
     });
+
+    it('Should filter the options itself when the query does not reference it', async () => {
+      const { result } = renderOptionsQuery({
+        ...defaultProps,
+        searchFilter: 'VAL1',
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+      expect(result.current.data?.map((o) => o.value)).toEqual([
+        'val1',
+        'val11',
+      ]);
+      expect(
+        runRequestMock.mock.calls[0][1].scopedVars.__searchFilter,
+      ).toBeUndefined();
+    });
+
+    it('Should not issue a new query when the search filter changes and the query does not reference it', async () => {
+      const { result, rerender } = renderOptionsQuery(defaultProps);
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+      rerender({ ...defaultProps, searchFilter: 'val2' });
+
+      await waitFor(() =>
+        expect(result.current.data?.map((o) => o.value)).toEqual(['val2']),
+      );
+      expect(runRequestMock).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('When static options are provided', () => {
