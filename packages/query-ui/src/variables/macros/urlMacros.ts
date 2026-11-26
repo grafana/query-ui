@@ -1,3 +1,5 @@
+import { locationUtil } from '@grafana/data';
+
 import {
   formatValue,
   type FormatVariable,
@@ -7,7 +9,6 @@ import type {
   InterpolationFormatParameter,
   QueryUIScopedVars,
 } from '../types';
-import { locationUtil } from '@grafana/data';
 
 /**
  * Handles `${__url}`, `${__url.path}` and `${__url.params}`, read from the

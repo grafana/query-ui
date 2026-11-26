@@ -1,9 +1,9 @@
 import type { Location } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
+import { type GrafanaConfig, locationUtil } from '@grafana/data';
 
 import { interpolate } from '../interpolation/useInterpolator';
 import type { QueryUIScopedVars } from '../types';
-import { GrafanaConfig, locationUtil } from '@grafana/data';
 
 /** Interpolates `target` with `url` (path and query) as the current location. */
 function interpolateWithUrl(target: string, url: string) {
