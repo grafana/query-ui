@@ -68,6 +68,7 @@ function Probe({ name }: { name: string }) {
     <>
       <div data-testid="loading">{String(Boolean(variable.loading))}</div>
       <div data-testid="value">{String(variable.getValue())}</div>
+      <div data-testid="error">{variable.error?.message ?? ''}</div>
     </>
   );
 }
@@ -282,6 +283,71 @@ describe('QueryVariable', () => {
       );
 
       expect(metricFindQuery).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('When the options query fails', () => {
+    function PickLabel({ label }: { label: string }) {
+      const variable = useVariable<VariableValue>('label');
+
+      return (
+        <button onClick={() => variable.onChange({ value: label, label })}>
+          {label}
+        </button>
+      );
+    }
+
+    it('Should stop loading, show the error and not run the query again', async () => {
+      metricFindQuery.mockRejectedValueOnce(new Error('Query failed'));
+      renderVariable({});
+
+      await waitFor(() =>
+        expect(screen.getByTestId('error')).toHaveTextContent('Query failed'),
+      );
+      expect(screen.getByTestId('loading')).toHaveTextContent('false');
+      // Still without a value: there are no options to pick the first of
+      expect(screen.getByTestId('value')).toHaveTextContent(/^undefined$/);
+
+      // Give a retry that should not happen the time to start
+      await act(() => new Promise((resolve) => setTimeout(resolve, 10)));
+      expect(metricFindQuery).toHaveBeenCalledTimes(1);
+    });
+
+    it('Should keep the value until a reference changes, then check it again', async () => {
+      renderVariable({ query: '${label}', value: web }, (node) => (
+        <DefineVariable
+          name="label"
+          value={{ value: 'service', label: 'service' }}
+        >
+          <PickLabel label="tier" />
+          <PickLabel label="pod" />
+          {node}
+        </DefineVariable>
+      ));
+
+      metricFindQuery.mockRejectedValueOnce(new Error('Query failed'));
+      await act(async () => screen.getByText('pod').click());
+
+      await waitFor(() =>
+        expect(screen.getByTestId('error')).toHaveTextContent('Query failed'),
+      );
+      expect(screen.getByTestId('loading')).toHaveTextContent('false');
+      // Not replaced by `api-1`, the first option a successful check would pick
+      expect(screen.getByTestId('value')).toHaveTextContent('web');
+      expect(metricFindQuery).toHaveBeenCalledTimes(1);
+
+      await act(async () => screen.getByText('tier').click());
+
+      await waitFor(() =>
+        expect(screen.getByTestId('error')).toBeEmptyDOMElement(),
+      );
+      expect(metricFindQuery).toHaveBeenCalledTimes(2);
+      expect(metricFindQuery).toHaveBeenLastCalledWith(
+        'tier',
+        expect.anything(),
+      );
+      expect(screen.getByTestId('loading')).toHaveTextContent('false');
+      expect(screen.getByTestId('value')).toHaveTextContent('web');
     });
   });
 
