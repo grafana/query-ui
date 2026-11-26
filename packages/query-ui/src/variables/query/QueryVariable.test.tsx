@@ -305,6 +305,67 @@ describe('QueryVariable', () => {
     });
   });
 
+  describe('When a variable the query references is loading', () => {
+    const custom = { value: 'custom', label: 'custom' };
+
+    /** Ends the label variable's loading, optionally with a new value. */
+    function FinishLabel({ label }: { label?: string }) {
+      const variable = useVariable<VariableValue>('label');
+
+      return (
+        <button
+          onClick={() => {
+            if (label) {
+              variable.onChange({ value: label, label });
+            }
+            variable.onSetLoading(false);
+          }}
+        >
+          {label ?? 'done'}
+        </button>
+      );
+    }
+
+    function renderLoadingLabel(value: VariableValueOrValues) {
+      return renderVariable({ query: '${label}', value }, (node) => (
+        <DefineVariable
+          name="label"
+          value={{ value: 'service', label: 'service' }}
+          loading
+        >
+          <FinishLabel />
+          <FinishLabel label="pod" />
+          {node}
+        </DefineVariable>
+      ));
+    }
+
+    it('Should keep a value that is not an option when the reference keeps its value', async () => {
+      renderLoadingLabel(custom);
+
+      expect(screen.getByTestId('loading')).toHaveTextContent('true');
+
+      await act(async () => screen.getByText('done').click());
+
+      await waitFor(() =>
+        expect(screen.getByTestId('loading')).toHaveTextContent('false'),
+      );
+      expect(screen.getByTestId('value')).toHaveTextContent('custom');
+      expect(metricFindQuery).not.toHaveBeenCalled();
+    });
+
+    it('Should check the value when the reference ends up with another value', async () => {
+      renderLoadingLabel(custom);
+
+      await act(async () => screen.getByText('pod').click());
+
+      await waitFor(() =>
+        expect(screen.getByTestId('value')).toHaveTextContent('api-1'),
+      );
+      expect(metricFindQuery).toHaveBeenCalledWith('pod', expect.anything());
+    });
+  });
+
   describe('When the options query fails', () => {
     function PickLabel({ label }: { label: string }) {
       const variable = useVariable<VariableValue>('label');

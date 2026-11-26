@@ -7,9 +7,14 @@ import type { VariableValue, VariableValueOption } from '../../variables/types';
 
 interface VariableValueComboboxProps {
   name: string;
+  /** Lets the user enter a value that is not one of the options. */
+  allowCustomValue?: boolean;
 }
 
-export function VariableValueCombobox({ name }: VariableValueComboboxProps) {
+export function VariableValueCombobox({
+  name,
+  allowCustomValue,
+}: VariableValueComboboxProps) {
   const { value, loadOptions, options, loading, onChange } =
     useVariable<VariableValue>(name);
 
@@ -31,7 +36,7 @@ export function VariableValueCombobox({ name }: VariableValueComboboxProps) {
     [onChange],
   );
 
-  const comboboxValue = getComboboxValue(value);
+  const comboboxValue = useMemo(() => getComboboxValue(value), [value]);
 
   return (
     <Field label={name} noMargin>
@@ -42,6 +47,7 @@ export function VariableValueCombobox({ name }: VariableValueComboboxProps) {
         options={comboboxOptions}
         width="auto"
         minWidth={20}
+        createCustomValue={allowCustomValue}
         onChange={comboboxOnChange}
       />
     </Field>

@@ -141,6 +141,7 @@ const heading = css({ margin: 0 });
  * options and value of pod. Probes count the commits and record the values of
  * a useInterpolator call, a useDataQuery call and the VizPanel it feeds, so
  * the e2e tests can see which queries run and what the cascade costs.
+ * The pod combobox allows custom values.
  */
 export function QueryVariableDemoPage() {
   return (
@@ -167,7 +168,7 @@ export function QueryVariableDemoPage() {
               <Stack>
                 <VariableValueCombobox name="env" />
                 <VariableValueCombobox name="app" />
-                <VariableValueCombobox name="pod" />
+                <VariableValueCombobox name="pod" allowCustomValue />
               </Stack>
               <InterpolatedProbe />
               <DataQueryProbe />

@@ -7,6 +7,7 @@ import { expect, type Page, test } from '@playwright/test';
 //   pod: `labelValues(env=$env, app=$app, pod)` <app>-0, <app>-1
 // Every env has its own apps and every app its own pods, so a change to env
 // has to change app, and that has to change pod.
+// The pod combobox allows custom values.
 //
 // Inside all three, probes count the commits of a component calling
 // useInterpolator, of one calling useDataQuery, of the VizPanel it feeds
@@ -154,6 +155,47 @@ test.describe('query variable', () => {
     await expect(page.getByRole('option')).toHaveText(['staging']);
     await waitForQuiet(page);
     expect(await variableQueries(page)).toEqual(['labelValues(env)']);
+  });
+
+  test('keeps a custom pod when the values above it come from the url too', async ({
+    page,
+  }) => {
+    await page.goto(
+      '/query-variable-demo?var-env=prod&var-app=prod-api&var-pod=custom',
+    );
+
+    await expect(interpolated(page)).toHaveText(
+      'env=prod app=prod-api pod=custom',
+    );
+
+    await openCombobox(page, 'pod', ['prod-api-0', 'prod-api-1']);
+
+    expect(await variableQueries(page)).toEqual([
+      'labelValues(env=prod, app=prod-api, pod)',
+    ]);
+    await expect(interpolated(page)).toHaveText(
+      'env=prod app=prod-api pod=custom',
+    );
+    await expect(page).toHaveURL(/var-pod=custom/);
+  });
+
+  test('keeps a typed pod through a reload', async ({ page }) => {
+    await gotoProd(page);
+
+    await combobox(page, 'pod').click();
+    await combobox(page, 'pod').fill('canary');
+    await page.getByRole('option', { name: /canary/ }).click();
+
+    await expect(interpolated(page)).toHaveText(
+      'env=prod app=prod-api pod=canary',
+    );
+    await expect(page).toHaveURL(/var-pod=canary/);
+
+    await page.reload();
+
+    await expect(interpolated(page)).toHaveText(
+      'env=prod app=prod-api pod=canary',
+    );
   });
 });
 
