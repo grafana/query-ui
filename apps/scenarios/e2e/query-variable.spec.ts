@@ -141,6 +141,20 @@ test.describe('query variable', () => {
 
     expect(await variableQueries(page)).toEqual(['labelValues(env=prod, app)']);
   });
+
+  test('filters the env options as the user types, without a new query', async ({
+    page,
+  }) => {
+    await gotoProd(page);
+    await openCombobox(page, 'env', ['prod', 'staging', 'dev']);
+
+    // labelValues(env) doesn't reference __searchFilter, so the search can't be sent
+    await combobox(page, 'env').fill('st');
+
+    await expect(page.getByRole('option')).toHaveText(['staging']);
+    await waitForQuiet(page);
+    expect(await variableQueries(page)).toEqual(['labelValues(env)']);
+  });
 });
 
 // The numbers below are what the cascade costs today. They are exact on
@@ -258,20 +272,5 @@ test.describe('cascading query variables', () => {
       'useVariableContextState(app)': 1,
       'useVariableContextState(pod)': 1,
     });
-  });
-
-  test('filters the label options as the user types, without a new query', async ({
-    page,
-  }) => {
-    await gotoWithValues(page);
-
-    await labelInput(page).click();
-    await expect(page.getByRole('option')).toHaveCount(3);
-
-    // labels() doesn't reference __searchFilter, so the search can't be sent
-    await labelInput(page).fill('re');
-
-    await expect(page.getByRole('option')).toHaveText(['region']);
-    await expect(variableQueries(page)).toHaveText(['labels()']);
   });
 });
