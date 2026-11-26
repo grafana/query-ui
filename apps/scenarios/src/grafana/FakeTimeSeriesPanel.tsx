@@ -18,6 +18,7 @@ import {
   type VizLegendItem,
 } from '@grafana/ui';
 
+import { useCommitCount } from '../renderStats/renderStats';
 import { FAKE_TIMESERIES_PANEL_ID } from './constants';
 import { createFakePanelPluginMeta } from './pluginMeta';
 
@@ -30,6 +31,9 @@ import { createFakePanelPluginMeta } from './pluginMeta';
  */
 function FakeTimeSeriesPanel({ data, width, height }: PanelProps) {
   const styles = useStyles2(getStyles);
+
+  // How often VizPanel renders the panel plugin itself, for the e2e tests
+  useCommitCount('FakeTimeSeriesPanel');
 
   if (data.state === LoadingState.Loading && data.series.length === 0) {
     return <div className={styles.message}>Loading…</div>;
@@ -64,7 +68,7 @@ function FakeTimeSeriesPanel({ data, width, height }: PanelProps) {
             <Sparkline key={name} name={name} field={field} />
           ))}
       </div>
-      {legendItems.length > 1 && (
+      {legendItems.length > 0 && (
         <VizLegend
           placement="bottom"
           displayMode={LegendDisplayMode.List}
@@ -118,7 +122,6 @@ function Sparkline({ name, field }: Series) {
 
   return (
     <div className={styles.series} data-testid={`fake-series ${name}`}>
-      <div className={styles.seriesName}>{name}</div>
       <svg
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
