@@ -1,6 +1,7 @@
 {
-  "name": "scenes2-demo",
+  "name": "query-ui-demo-app",
   "version": "1.0.0",
+  "private": true,
   "scripts": {
     "build": "webpack -c ./webpack.config.ts --env production",
     "dev": "webpack -w -c ./webpack.config.ts --env development",
