@@ -4,6 +4,7 @@ import { VariableFormatID } from '@grafana/schema';
 import { VARIABLE_REGEX } from '../constants';
 import { macrosIndex } from '../macros';
 import {
+  isCustomVariableValue,
   type QueryUIScopedVars,
   VariableContext,
   type InterpolationFormatParameter,
@@ -45,6 +46,29 @@ export function interpolate(
 
   let loading = false;
 
+  // A custom value formats itself. What it returns is already formatted but can
+  // hold variable expressions of its own (like a custom all value), so it is
+  // interpolated again without a default format.
+  const formatOrInterpolate = (
+    variable: FormatVariable,
+    fieldPath: string | undefined,
+    fmt: InterpolationFormatParameter,
+  ): string => {
+    const value = variable.getValue(fieldPath);
+
+    if (isCustomVariableValue(value)) {
+      const [nested, nestedLoading] = interpolate(
+        value.formatter(fmt),
+        context,
+        scopedVars,
+      );
+      loading = loading || nestedLoading;
+      return nested;
+    }
+
+    return formatValue(variable, value, fmt, fieldPath);
+  };
+
   const result = target.replace(
     VARIABLE_REGEX,
     (match, var1, var2, fmt2, var3, fieldPath, fmt3) => {
@@ -57,21 +81,14 @@ export function interpolate(
           loading = true;
         }
 
-        return formatValue(
-          variable,
-          variable.getValue(fieldPath),
-          fmt,
-          fieldPath,
-        );
+        return formatOrInterpolate(variable, fieldPath, fmt);
       }
 
-      if (macrosIndex.get(variableName)) {
-        const macro = macrosIndex.get(variableName)!(
-          variableName,
-          match,
-          scopedVars,
-        );
-        return formatValue(macro, macro.getValue(fieldPath), fmt, fieldPath);
+      const macroHandler = macrosIndex.get(variableName);
+
+      if (macroHandler) {
+        const macro = macroHandler(variableName, match, scopedVars);
+        return formatOrInterpolate(macro, fieldPath, fmt);
       }
 
       return match;
@@ -106,9 +123,6 @@ function formatValue(
   if (rawValue === null || rawValue === undefined) {
     return '';
   }
-
-  // TODO: let a variable return a custom value that does its own formatting,
-  // like the old scenes CustomVariableValue (used for customAllValue and macros)
 
   // Formatters only handle primitives and arrays, so an object becomes a string
   const value: FormatValue =

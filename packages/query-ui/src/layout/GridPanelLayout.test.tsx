@@ -1,13 +1,7 @@
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createTheme } from '@grafana/data';
 
 import { GridPanelLayout, GridPanelLayoutItem } from './GridPanelLayout';
-
-// The real module pulls uplot and other browser-only code into jsdom.
-vi.mock('@grafana/ui', () => ({
-  useTheme2: () => createTheme(),
-}));
 
 type ObserverCallback = (entries: Array<{ isIntersecting: boolean }>) => void;
 

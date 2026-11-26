@@ -1,5 +1,7 @@
 import { createContext } from 'react';
+import type { Location } from 'react-router-dom';
 import type { ScopedVars, TimeRange, VariableType } from '@grafana/data';
+import type { TimeZone } from '@grafana/schema';
 
 export type VariableValue = {
   label?: string;
@@ -63,7 +65,32 @@ export type VariableCustomFormatterFn = (
 export type InterpolationFormatParameter =
   string | VariableCustomFormatterFn | undefined;
 
+/**
+ * A value that formats itself instead of going through the format registry.
+ * Macros use it for values that are already formatted, like
+ * `$__url_time_range`, or that read the format as their own options, like
+ * `${__url.params:exclude:from}`.
+ */
+export interface CustomVariableValue {
+  /** Receives the format named in the expression, or the default format. */
+  formatter(formatNameOrFn?: InterpolationFormatParameter): string;
+}
+
+export function isCustomVariableValue(
+  value: unknown,
+): value is CustomVariableValue {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'formatter' in value &&
+    typeof value.formatter === 'function'
+  );
+}
+
 export interface QueryUIScopedVars extends ScopedVars {
   __timeRange?: { value: TimeRange };
+  /** The time zone of `__timeRange`, used by `$__timezone` and the `text` format of `$__from`/`$__to`. */
+  __timeZone?: { value: TimeZone };
+  /** The router location, without the Grafana sub path, used by `${__url}`. */
   __location?: { value: Location };
 }

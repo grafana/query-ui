@@ -19,12 +19,6 @@ import {
   type TimeRangeContextProviderProps,
 } from './TimeRangeContext';
 
-// The real module drags @grafana/ui (and uplot's CSS) into jsdom; the time
-// utils only read the boot data time zone from it.
-vi.mock('@grafana/runtime', () => ({
-  config: { bootData: { user: { timezone: 'browser' } } },
-}));
-
 /** `name` keeps the readouts apart when a test renders nested providers. */
 function ShowTimeRange({ name = 'outer' }: { name?: string }) {
   const { from, to, value, onChangeTimeRange, onRefresh } = useTimeRange();
