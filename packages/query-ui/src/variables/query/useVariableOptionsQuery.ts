@@ -3,7 +3,7 @@ import {
   useQueryClient,
   type UseQueryResult,
 } from '@tanstack/react-query';
-import { useCallback, useEffect, useId, useRef } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef } from 'react';
 import {
   CoreApp,
   type DataQueryRequest,
@@ -15,6 +15,7 @@ import { getDataSourceSrv } from '@grafana/runtime';
 import type { DataQuery, DataSourceRef } from '@grafana/schema';
 
 import { useTimeRange } from '../../hooks/useTimeRange';
+import { getOptionSearcher } from '../getOptionSearcher';
 import type { VariableValueOption } from '../types';
 import {
   createVariableQueryRunner,
@@ -23,6 +24,7 @@ import {
 } from './createVariableQueryRunner';
 import type { MetricFindValueWithProperties } from './toMetricFindValues';
 import {
+  containsSearchFilter,
   mergeStaticOptions,
   metricNamesToVariableValues,
   type StaticOptionsOrder,
@@ -57,7 +59,12 @@ export interface VariableOptionsQueryProps extends VariableQueryDefinition {
   enabled?: boolean;
   /** Variable name. Used for default refIds and sent to legacy data sources. */
   name?: string;
-  /** Sent to the data source as the `__searchFilter` variable. Debounce it before passing it in. */
+  /**
+   * Narrows the options to what the user typed. A query that references
+   * `${__searchFilter}` is sent it as that variable and runs again whenever it
+   * changes, so debounce it before passing it in. For any other query, the
+   * options are fetched once and fuzzy searched by label here.
+   */
   searchFilter?: string;
   staleTime?: number;
 }
@@ -81,6 +88,9 @@ export function useVariableOptionsQuery(
  * like a combobox does when it opens and as the user types. It shares the cache
  * with `useVariableOptionsQuery`. The function stays the same across renders and
  * always fetches with the latest props.
+ *
+ * Only a query that references `${__searchFilter}` runs again for a new search.
+ * For any other, typing fuzzy searches the options already fetched.
  */
 export function useVariableOptionsLoader(
   props: VariableOptionsQueryProps,
@@ -122,10 +132,18 @@ function useOptionsQueryDefinition(props: VariableOptionsQueryProps) {
   const dataSourceSrv = getDataSourceSrv();
   const timeRange = useTimeRange().value;
   const timeRangeKey = `${timeRange.from.valueOf()}-${timeRange.to.valueOf()}`;
+  const queryHasSearchFilter = useMemo(
+    () => containsSearchFilter(query),
+    [query],
+  );
 
   return (rawSearchFilter?: string) => {
     // An empty filter is the same query as no filter
-    const searchFilter = rawSearchFilter || undefined;
+    const search = rawSearchFilter || undefined;
+    // A query that can't narrow its results is run without the search, and
+    // the search filters its options instead
+    const searchFilter = queryHasSearchFilter ? search : undefined;
+    const localSearch = queryHasSearchFilter ? undefined : search;
 
     return {
       // Regex, sort and static options are applied in `select`, so changing them does not refetch
@@ -180,12 +198,14 @@ function useOptionsQueryDefinition(props: VariableOptionsQueryProps) {
           metricNames: values,
         });
 
-        return mergeStaticOptions(
+        const merged = mergeStaticOptions(
           options,
           staticOptions,
           staticOptionsOrder,
           sort,
         );
+
+        return localSearch ? getOptionSearcher(merged)(localSearch) : merged;
       },
     };
   };
