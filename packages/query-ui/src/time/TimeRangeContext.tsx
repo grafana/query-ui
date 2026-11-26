@@ -11,7 +11,7 @@ export interface TimeRangeContextState {
   from: string;
   to: string;
   value: TimeRange;
-  timeZone?: TimeZone;
+  timeZone: string;
   refreshCounter: number;
   onChangeTimeRange(timeRange: TimeRange): void;
   onRefresh(): void;
@@ -22,6 +22,7 @@ interface CachedTimeRangeState {
   from: string;
   to: string;
   value: TimeRange;
+  timeZone: string;
   /** The refresh the `value` was evaluated at. */
   refreshCounter: number;
 }
@@ -128,10 +129,12 @@ function useTimeRangeState({
     const prevFrom = cached?.from ?? initFrom;
     const prevTo = cached?.to ?? initTo;
 
-    // A refresh outdates the cached value: the range has to be evaluated again.
+    // A refresh or a new time zone outdates the cached value: the range has to
+    // be evaluated again.
     if (
       cached &&
       cached.refreshCounter === refreshCounter &&
+      cached.timeZone === validTimeZone &&
       shouldUseCachedState(cached, urlState)
     ) {
       return { onChangeTimeRange, onRefresh, ...cached };
@@ -151,11 +154,19 @@ function useTimeRangeState({
 
     cache.set<CachedTimeRangeState>(
       cacheKey,
-      { from, to, value, refreshCounter },
+      { from, to, value, refreshCounter, timeZone: validTimeZone },
       staleTime,
     );
 
-    return { value, from, to, refreshCounter, onChangeTimeRange, onRefresh };
+    return {
+      value,
+      from,
+      to,
+      refreshCounter,
+      onChangeTimeRange,
+      onRefresh,
+      timeZone: validTimeZone,
+    };
   }, [
     cache,
     cacheKey,

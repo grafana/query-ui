@@ -4,12 +4,13 @@ import {
   getDataSourceInstanceList,
   getDefaultDataSourceInstanceListItem,
 } from '@grafana/plugin-compat/datasources';
+import type { DataSourceRef } from '@grafana/schema';
 
 import { useInterpolator } from './interpolation/useInterpolator';
 import {
   VariableContext,
-  type VariableContextState,
   type VariableValue,
+  type VariableContextState,
   type VariableValueOption,
 } from './types';
 import { useVariableContextState } from './useVariableContextState';
@@ -20,11 +21,12 @@ export const NO_DATA_SOURCES_FOUND_ERROR = 'No data sources found';
 export interface DataSourceVariableProps {
   name: string;
   /**
-   * Initial value: a data source uid, or `default` when `defaultOptionEnabled` is set.
+   * Initial value: a data source uid or ref, or `default` when `defaultOptionEnabled` is set.
    * Kept when it matches one of the loaded options, otherwise the first option is selected.
    * A value remembered from an earlier mount of a variable with the same `name` wins over this one.
+   * Left out, the variable starts out loading until the options select one.
    */
-  value?: string;
+  value?: string | DataSourceRef;
   /**
    * Include all data source instances with this plugin id
    */
@@ -38,10 +40,6 @@ export interface DataSourceVariableProps {
    * For backwards compatibility with old dashboards, will likely be removed.
    */
   defaultOptionEnabled?: boolean;
-  /**
-   * If it should start in a loading state or not
-   */
-  loading?: boolean;
   /**
    * Keeps the selection out of the URL. By default it is synced to the
    * `var-<name>` query parameter, and a value there wins over `value` and over
@@ -57,16 +55,15 @@ export function DataSourceVariable({
   pluginId,
   regex = '',
   defaultOptionEnabled,
-  loading,
   skipUrlSync,
   children,
 }: DataSourceVariableProps) {
   const parentContext = useContext(VariableContext);
+  const uid = typeof value === 'string' ? value : value?.uid;
 
   const context = useVariableContextState({
     name,
-    value: { value: value ?? '', label: value ?? '' },
-    loading: loading,
+    value: { value: uid, label: uid },
     parent: parentContext,
     skipUrlSync,
     rememberValue: true,

@@ -45,6 +45,7 @@ export function useDataQuery<T extends DataQuery>(
   const timeRange = timeRangeCtx.value;
   const staleTime = options.staleTime ?? 30000;
   const filters = adhocFiltersCtx?.filters;
+  const timeZone = timeRangeCtx.timeZone;
 
   const dsRef = findFirstDatasource(options.queries);
   const dsQuery = useQuery({
@@ -56,8 +57,9 @@ export function useDataQuery<T extends DataQuery>(
   const timeRangeKey = `${timeRange.from.valueOf()}-${timeRange.to.valueOf()}`;
   const queries = options.queries;
   const maxDataPoints = options.maxDataPoints ?? 500;
-  const queryKey = [dataQueryKey, queries, timeRangeKey, filters];
+  const queryKey = [dataQueryKey, queries, timeRangeKey, timeZone, filters];
   const enabled = dsQuery.data != null && options.enabled !== false;
+
   // The request carries the query's hash as its id, so anything holding the
   // resulting PanelData (like VizPanel) can find the query and cancel it.
   const requestId = hashKey(queryKey);
@@ -79,8 +81,7 @@ export function useDataQuery<T extends DataQuery>(
         range: timeRange,
         rangeRaw: timeRange.raw,
         startTime: Date.now(),
-        // TODO: use actual values for the following properties
-        timezone: 'utc',
+        timezone: timeZone,
         interval: '1m',
         intervalMs: 6000,
         maxDataPoints: maxDataPoints,

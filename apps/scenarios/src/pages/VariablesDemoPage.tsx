@@ -6,12 +6,7 @@ import {
 } from '@grafana/query-ui';
 import { Stack } from '@grafana/ui';
 
-import { PluginPage } from '../components/PluginPage';
-
-const breadcrumbs = [
-  { text: 'Scenarios', url: '/' },
-  { text: 'Variables demo' },
-];
+import { ScenarioPage } from '../components/ScenarioPage';
 
 const serviceOptions = [
   { value: 'api', label: 'API' },
@@ -44,10 +39,10 @@ function Interpolated() {
  */
 export function VariablesDemoPage() {
   return (
-    <PluginPage
-      breadcrumbs={breadcrumbs}
+    <ScenarioPage
       title="Variables demo"
       description="Picks a single-value and a multi-value variable from static options and syncs both to the URL."
+      showTimeControls={false}
     >
       <DefineVariable
         name="service"
@@ -64,6 +59,6 @@ export function VariablesDemoPage() {
           </Stack>
         </DefineVariable>
       </DefineVariable>
-    </PluginPage>
+    </ScenarioPage>
   );
 }

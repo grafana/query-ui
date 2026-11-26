@@ -37,7 +37,7 @@ export function DrilldownMetrics() {
 
   return (
     <PluginPage pageNav={pageNav} layout={PageLayoutType.Canvas}>
-      <DataSourceVariable name="ds" loading={true} pluginId="prometheus">
+      <DataSourceVariable name="ds" pluginId="prometheus">
         <AdhocFiltersProvider datasource={trailDS}>
           <AdhocFiltersVariable name={VAR_FILTERS}>
             <DefineVariable name={VAR_METRIC} value={{ value: '' }}>

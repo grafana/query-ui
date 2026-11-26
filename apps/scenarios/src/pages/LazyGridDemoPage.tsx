@@ -1,28 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-  GridPanelLayout,
-  TimeRangeContextPicker,
-  TimeRangeRefresh,
-} from '@grafana/query-ui';
+import { GridPanelLayout } from '@grafana/query-ui';
 
 import { DemoPanel } from '../components/DemoPanel';
-import { PluginPage } from '../components/PluginPage';
+import { ScenarioPage } from '../components/ScenarioPage';
 
 const PANEL_COUNT = 30;
 
 const panelIndexes = Array.from({ length: PANEL_COUNT }, (_, i) => i);
-
-const breadcrumbs = [
-  { text: 'Scenarios', url: '/' },
-  { text: 'Lazy grid demo' },
-];
-
-const actions = (
-  <>
-    <TimeRangeContextPicker />
-    <TimeRangeRefresh />
-  </>
-);
 
 /**
  * A tall grid in which `GridPanelLayout` mounts each panel only once it
@@ -38,11 +22,9 @@ export function LazyGridDemoPage() {
   }, []);
 
   return (
-    <PluginPage
-      breadcrumbs={breadcrumbs}
+    <ScenarioPage
       title="Lazy grid demo"
       description="Panels outside the viewport mount, and query, only once they scroll into view."
-      actions={actions}
     >
       <p data-testid="mounted-count">
         Mounted panels: {mounted.size} of {PANEL_COUNT}
@@ -52,7 +34,7 @@ export function LazyGridDemoPage() {
           <TrackedPanel key={index} index={index} onMount={onMount} />
         ))}
       </GridPanelLayout>
-    </PluginPage>
+    </ScenarioPage>
   );
 }
 

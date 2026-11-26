@@ -12,9 +12,9 @@ import type {
 export interface VariableValueStateInput<T extends VariableValueOrValues> {
   name: string;
   /**
-   * The value to start with. A list makes this a multi-value variable, which
-   * syncs to one `var-<name>` query parameter per value. Whether it is a list
-   * is read once, on mount.
+   * The value to start with. An array makes this a multi-value variable, which
+   * syncs to one `var-<name>` query parameter per value. This is only the initial value.
+   * Changes after mount has no effect.
    */
   value: T;
   /**
@@ -74,6 +74,7 @@ export function useVariableContextState<
       ? remembered
       : undefined;
   });
+
   const startValue = rememberedValue ?? input.value;
 
   const [options, setOptions] = React.useState<VariableValueOption[]>(
@@ -85,6 +86,7 @@ export function useVariableContextState<
       ? startValue
       : (fromUrlValue(urlValue, options) as T),
   );
+
   const [loading, setLoading] = React.useState(
     () => input.loading ?? !hasValue(value),
   );
@@ -207,7 +209,7 @@ export function hasValue(value: VariableValueOrValues) {
     return value.some(hasValue);
   }
 
-  return value.value !== undefined && value.value !== '';
+  return value.value != undefined;
 }
 
 /**
@@ -239,7 +241,7 @@ function validateValue(
 
   const selected = findOption(current) ?? first;
 
-  return selected ? toValue(selected) : { value: '', label: '' };
+  return selected ? toValue(selected) : { value: undefined, label: undefined };
 }
 
 function toValue(option: VariableValueOption): VariableValue {
