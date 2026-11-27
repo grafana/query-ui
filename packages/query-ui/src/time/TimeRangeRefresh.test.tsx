@@ -7,13 +7,10 @@ import { useTimeRange } from '../hooks/useTimeRange';
 import { TimeRangeContextProvider } from './TimeRangeContext';
 import { TimeRangeRefresh } from './TimeRangeRefresh';
 
-vi.mock('@grafana/runtime', () => ({
-  config: { bootData: { user: { timezone: 'browser' } } },
-}));
-
-// The real RefreshPicker drags uplot into jsdom. The stub renders what
-// TimeRangeRefresh passes to it.
-vi.mock('@grafana/ui', () => ({
+// A plain button in place of RefreshPicker, rendering what TimeRangeRefresh
+// passes to it.
+vi.mock('@grafana/ui', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   RefreshPicker: (props: {
     isLoading?: boolean;
     loadingText?: string;

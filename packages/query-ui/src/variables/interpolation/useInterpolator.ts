@@ -1,19 +1,15 @@
 import React from 'react';
-import { VariableFormatID } from '@grafana/schema';
 
 import { VARIABLE_REGEX } from '../constants';
 import { macrosIndex } from '../macros';
 import {
+  isCustomVariableValue,
   type QueryUIScopedVars,
   VariableContext,
   type InterpolationFormatParameter,
   type VariableContextState,
 } from '../types';
-import {
-  formatRegistry,
-  type FormatValue,
-  type FormatVariable,
-} from './formatRegistry';
+import { formatValue, type FormatVariable } from './formatRegistry';
 
 /**
  * Replaces the variable expressions in `input` (`$var`, `[[var]]`, `${var}`,
@@ -57,21 +53,14 @@ export function interpolate(
           loading = true;
         }
 
-        return formatValue(
-          variable,
-          variable.getValue(fieldPath),
-          fmt,
-          fieldPath,
-        );
+        return formatVariable(variable, fieldPath, fmt);
       }
 
-      if (macrosIndex.get(variableName)) {
-        const macro = macrosIndex.get(variableName)!(
-          variableName,
-          match,
-          scopedVars,
-        );
-        return formatValue(macro, macro.getValue(fieldPath), fmt, fieldPath);
+      const macroHandler = macrosIndex.get(variableName);
+
+      if (macroHandler) {
+        const macro = macroHandler(variableName, match, scopedVars);
+        return formatVariable(macro, fieldPath, fmt);
       }
 
       return match;
@@ -97,57 +86,19 @@ function lookupVariable(
   return current;
 }
 
-function formatValue(
+function formatVariable(
   variable: FormatVariable,
-  rawValue: unknown,
-  formatNameOrFn?: InterpolationFormatParameter,
-  fieldPath?: string,
+  fieldPath: string | undefined,
+  fmt: InterpolationFormatParameter,
 ): string {
-  if (rawValue === null || rawValue === undefined) {
-    return '';
+  const value = variable.getValue(fieldPath);
+
+  // A custom value formats itself, and what it returns is final. It is not
+  // interpolated again: it can hold text from the URL, and a crafted link could
+  // then expand variables or make a macro repeat itself without end.
+  if (isCustomVariableValue(value)) {
+    return value.formatter(fmt);
   }
 
-  // TODO: let a variable return a custom value that does its own formatting,
-  // like the old scenes CustomVariableValue (used for customAllValue and macros)
-
-  // Formatters only handle primitives and arrays, so an object becomes a string
-  const value: FormatValue =
-    !Array.isArray(rawValue) && typeof rawValue === 'object'
-      ? `${rawValue}`
-      : (rawValue as FormatValue);
-
-  if (typeof formatNameOrFn === 'function') {
-    return formatNameOrFn(value, {
-      name: variable.name,
-      type: variable.type,
-      multi: variable.isMulti,
-      includeAll: variable.includeAll,
-    });
-  }
-
-  let args: string[] = [];
-
-  if (!formatNameOrFn) {
-    formatNameOrFn = VariableFormatID.Glob;
-  } else {
-    // some formats have arguments that come after ':' character
-    args = formatNameOrFn.split(':');
-    if (args.length > 1) {
-      formatNameOrFn = args[0];
-      args = args.slice(1);
-    } else {
-      args = [];
-    }
-  }
-
-  let formatter = formatRegistry.getIfExists(formatNameOrFn);
-
-  if (!formatter) {
-    console.error(
-      `Variable format ${formatNameOrFn} not found. Using glob format as fallback.`,
-    );
-    formatter = formatRegistry.get(VariableFormatID.Glob);
-  }
-
-  return formatter.formatter(value, args, variable, fieldPath);
+  return formatValue(variable, value, fmt, fieldPath);
 }

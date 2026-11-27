@@ -37,6 +37,7 @@ export function VizPanel(props: VizPanelProps) {
     onOptionsChange,
     replaceVariables,
   } = useVizPanel(props);
+
   const panelContext = usePanelContextState({
     fieldConfig,
     options: panelOptions,
@@ -44,6 +45,7 @@ export function VizPanel(props: VizPanelProps) {
     onFieldConfigChange,
     onOptionsChange,
   });
+
   const [ref, { width, height }] = useMeasure<HTMLDivElement>();
 
   return (
