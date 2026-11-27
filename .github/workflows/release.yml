@@ -475,7 +475,8 @@ jobs:
           NPM_CONFIG_LOGLEVEL: verbose
         run: |
           set -euo pipefail
-          pnpm exec changeset publish --tag beta --no-git-tag | tee /tmp/publish.log
+          cd packages/query-ui
+          npm publish --tag beta | tee /tmp/publish.log
           grep -oE '@[^[:space:]]+@0\.0\.0-beta-[0-9]+' /tmp/publish.log | sort -u > /tmp/published.txt || true
 
       # One sink or the other, built from the same body, so the two can't
