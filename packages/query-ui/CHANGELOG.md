@@ -1,1 +1,1 @@
-# @grafana/base-ui
+# @grafana/query-ui

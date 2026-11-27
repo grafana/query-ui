@@ -24,7 +24,7 @@ name: Release
 #
 # Why one file: npm trusted publishing is bound to a single workflow file per
 # package, and `release.yml` already holds that trusted-publisher slot (OIDC,
-# `environment: release` + `id-token: write`). Publishing beta from the same file
+# `environment: npm-publish` + `id-token: write`). Publishing beta from the same file
 # reuses that publisher — so there's no second npm config to register and no
 # long-lived NPM_TOKEN. (`issue_comment` workflows run from the DEFAULT branch, so
 # the `/release-beta` trigger only works once this is on `main`; use the manual
@@ -82,7 +82,7 @@ jobs:
       github.event_name == 'push' ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.pr == '' && github.event.inputs.mode != 'beta')
     runs-on: ubuntu-latest
-    environment: release
+    environment: npm-publish
     permissions:
       contents: write
       pull-requests: write
@@ -201,39 +201,6 @@ jobs:
           github-token: ${{ steps.app-token.outputs.token }}
           publish-script: pnpm release
 
-      # ── Announce real releases in Slack. Deliberately absent from the beta job:
-      # snapshot builds are ephemeral per-PR artifacts and would be noise. Reuses
-      # the PDE digest bot token from Vault (the bot must be a member of the
-      # target channel); the channel comes from the RELEASE_SLACK_CHANNEL_ID
-      # repository variable so it can be changed without editing the workflow. ──
-      - name: Get Slack token from Vault
-        id: slack-secrets
-        if: steps.changesets.outputs.has-changesets == 'false' && steps.publish.outputs.published == 'true'
-        uses: grafana/shared-workflows/actions/get-vault-secrets@2e3743a1f8abfd3e921e53a7726ec0744c11bb01 # get-vault-secrets/v2.0.1
-        with:
-          repo_secrets: |
-            SLACK_BOT_TOKEN=pde-digest:slack-bot-token
-
-      - name: Announce release in Slack
-        if: steps.changesets.outputs.has-changesets == 'false' && steps.publish.outputs.published == 'true'
-        env:
-          SLACK_BOT_TOKEN: ${{ fromJSON(steps.slack-secrets.outputs.secrets).SLACK_BOT_TOKEN }}
-          CHANNEL_ID: ${{ vars.RELEASE_SLACK_CHANNEL_ID }}
-          PUBLISHED_PACKAGES: ${{ steps.publish.outputs.published-packages }}
-        run: |
-          set -euo pipefail
-          COUNT=$(printf '%s' "$PUBLISHED_PACKAGES" | jq 'length')
-          NOUN=$([ "$COUNT" = 1 ] && echo package || echo packages)
-          LINES=$(printf '%s' "$PUBLISHED_PACKAGES" | jq -r '.[] | "• `\(.name)@\(.version)` — <https://www.npmjs.com/package/\(.name)/v/\(.version)|npm> · <https://github.com/${{ github.repository }}/blob/main/packages/\(.name | sub("^@grafana/"; ""))/CHANGELOG.md|changelog>"')
-          TEXT="📦 *Agentic Experience Platform release* — ${COUNT} ${NOUN} published to npm:"$'\n'"$LINES"
-          jq -n --arg channel "$CHANNEL_ID" --arg text "$TEXT" \
-            '{channel: $channel, text: $text, unfurl_links: false, unfurl_media: false}' \
-            | curl -sf -X POST https://slack.com/api/chat.postMessage \
-                -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
-                -H 'Content-Type: application/json; charset=utf-8' \
-                -d @- \
-            | jq -e '.ok' > /dev/null
-
   # ── Authorize a beta trigger ──
   # The previous inline gate used `github.event.pull_request.author_association`
   # (and the comment equivalent), but webhook payloads report PRIVATE org members
@@ -319,7 +286,7 @@ jobs:
     # Backstop against a wedged step (the default is 6 hours, which also blocks
     # this PR's concurrency slot, so later beta runs queue behind the zombie).
     timeout-minutes: 30
-    environment: release
+    environment: npm-publish
     permissions:
       contents: read
       pull-requests: write
@@ -494,7 +461,7 @@ jobs:
       # unchanged — same packages, only the `^`/`~` → `*` specifier) so the frozen
       # dependency check pnpm runs before `pnpm exec` doesn't fail the Build/Publish
       # steps.
-      - name: Re-sync lockfile after pinning (grafana/design#404)
+      - name: Re-sync lockfile after pinning (grafana/query-ui#404)
         if: steps.changesets.outputs.count != '0'
         run: pnpm install --no-frozen-lockfile
 
