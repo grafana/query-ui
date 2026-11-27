@@ -1,5 +1,10 @@
 # Grafana Query UI
 
+[![npm version](https://img.shields.io/npm/v/@grafana/query-ui.svg)](https://www.npmjs.com/package/@grafana/query-ui)
+[![npm downloads](https://img.shields.io/npm/dm/@grafana/query-ui.svg)](https://www.npmjs.com/package/@grafana/query-ui)
+[![CI](https://github.com/grafana/query-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/grafana/query-ui/actions/workflows/ci.yml)
+[![License](https://img.shields.io/npm/l/@grafana/query-ui.svg)](./LICENSE)
+
 A rewrite of scenes, optimized for pure React and agentic workflows.
 
 For an quick introduction to this library and why it exists please read [the overview](./docs/OVERVIEW.md)
