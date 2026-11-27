@@ -34,7 +34,7 @@ name: Release
 
 on:
   push:
-    branches: [release-test]
+    branches: [main]
     paths:
       - 'packages/**'
       - '.changeset/**'
@@ -62,7 +62,7 @@ on:
         description: 'Only used when "pr" is blank and "mode" is "beta": branch in this repo to snapshot-publish a beta from.'
         required: false
         type: string
-        default: release-test
+        default: main
 
 concurrency:
   # Real releases serialize on the ref; beta runs serialize per-PR so two PRs can
