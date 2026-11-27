@@ -101,11 +101,11 @@ jobs:
       # grafana/deployment_tools, which grants this workflow's `default` permission
       # set contents + pull-requests write on `main`. Same pattern as
       # grafana/grafana-assistant-app.
-      - name: Generate GitHub App token
-        id: app-token
-        uses: grafana/shared-workflows/actions/create-github-app-token@46f48da11e78ebdba7a8747ae456b11062fac83e # create-github-app-token/v0.3.1
-        with:
-          github_app: grafana-query-ui-bot
+      # - name: Generate GitHub App token
+      #   id: app-token
+      #   uses: grafana/shared-workflows/actions/create-github-app-token@46f48da11e78ebdba7a8747ae456b11062fac83e # create-github-app-token/v0.3.1
+      #   with:
+      #     github_app: grafana-query-ui-bot
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
