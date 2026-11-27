@@ -34,7 +34,7 @@ name: Release
 
 on:
   push:
-    branches: [main]
+    branches: [release-test]
     paths:
       - 'packages/**'
       - '.changeset/**'
