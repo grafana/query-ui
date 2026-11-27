@@ -1,6 +1,6 @@
 {
   "name": "@grafana/query-ui",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": false,
   "description": "A library to build Grafana data exploration applications",
   "license": "Apache-2.0",
