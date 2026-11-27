@@ -105,7 +105,7 @@ jobs:
         id: app-token
         uses: grafana/shared-workflows/actions/create-github-app-token@46f48da11e78ebdba7a8747ae456b11062fac83e # create-github-app-token/v0.3.1
         with:
-          github_app: grafana-design
+          github_app: grafana-query-ui-bot
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -471,6 +471,8 @@ jobs:
 
       - name: Publish to the beta tag
         if: steps.changesets.outputs.count != '0'
+        env:
+          NPM_CONFIG_LOGLEVEL: verbose
         run: |
           set -euo pipefail
           pnpm exec changeset publish --tag beta --no-git-tag | tee /tmp/publish.log
