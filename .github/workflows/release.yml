@@ -288,7 +288,7 @@ jobs:
     timeout-minutes: 30
     environment: npm-publish
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
       id-token: write
     steps:
