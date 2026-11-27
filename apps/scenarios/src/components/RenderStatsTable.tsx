@@ -1,13 +1,19 @@
 import { css } from '@emotion/css';
+import type { ReactNode } from 'react';
 import { Button, Stack } from '@grafana/ui';
 
 import { resetRenderStats, useRenderStats } from '../renderStats/renderStats';
+
+export interface RenderStatsTableProps {
+  /** Shown after the reset button, for a page's own controls. */
+  extraActions?: ReactNode;
+}
 
 /**
  * What the probes counted since the last reset. It sits outside the probed
  * components, so its own renders don't count.
  */
-export function RenderStatsTable() {
+export function RenderStatsTable({ extraActions }: RenderStatsTableProps) {
   const stats = useRenderStats();
   const ids = [
     ...new Set([...Object.keys(stats.renders), ...Object.keys(stats.values)]),
@@ -20,6 +26,7 @@ export function RenderStatsTable() {
         <Button size="sm" variant="secondary" onClick={resetRenderStats}>
           Reset counts
         </Button>
+        {extraActions}
       </Stack>
       <table data-testid="render-stats">
         <thead>

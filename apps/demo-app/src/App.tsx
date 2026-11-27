@@ -15,8 +15,9 @@ function App(props: AppRootProps) {
         <UrlStateProvider>
           <TimeRangeContextProvider>
             <Routes>
+              {/* The wildcard lets any demo add routes of its own below `route`. */}
               {demos.map(({ route, component: Component }) => (
-                <Route key={route} path={route} element={<Component />} />
+                <Route key={route} path={`${route}/*`} element={<Component />} />
               ))}
               <Route path="*" element={<DemoHome />} />
             </Routes>

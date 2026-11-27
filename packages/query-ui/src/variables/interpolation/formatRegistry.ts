@@ -10,6 +10,7 @@ import { t } from '@grafana/i18n';
 import { type VariableType, VariableFormatID } from '@grafana/schema';
 
 import { ALL_VARIABLE_VALUE } from '../constants';
+import type { InterpolationFormatParameter } from '../types';
 
 export type VariableValueSingle = string | number | boolean;
 
@@ -475,4 +476,60 @@ function sqlStringFormatter(value: FormatValue) {
 
   const strVal = typeof value === 'string' ? value : String(value);
   return `'${replace(strVal, regExp, (match) => SQL_ESCAPE_MAP[match] ?? '')}'`;
+}
+
+/**
+ * Formats a variable value with a format name (with its arguments, like
+ * `date:YYYY`) or a custom formatter function. No format means glob.
+ */
+export function formatValue(
+  variable: FormatVariable,
+  rawValue: unknown,
+  formatNameOrFn?: InterpolationFormatParameter,
+  fieldPath?: string,
+): string {
+  if (rawValue === null || rawValue === undefined) {
+    return '';
+  }
+
+  // Formatters only handle primitives and arrays, so an object becomes a string
+  const value: FormatValue =
+    !Array.isArray(rawValue) && typeof rawValue === 'object'
+      ? `${rawValue}`
+      : (rawValue as FormatValue);
+
+  if (typeof formatNameOrFn === 'function') {
+    return formatNameOrFn(value, {
+      name: variable.name,
+      type: variable.type,
+      multi: variable.isMulti,
+      includeAll: variable.includeAll,
+    });
+  }
+
+  let args: string[] = [];
+
+  if (!formatNameOrFn) {
+    formatNameOrFn = VariableFormatID.Glob;
+  } else {
+    // some formats have arguments that come after ':' character
+    args = formatNameOrFn.split(':');
+    if (args.length > 1) {
+      formatNameOrFn = args[0];
+      args = args.slice(1);
+    } else {
+      args = [];
+    }
+  }
+
+  let formatter = formatRegistry.getIfExists(formatNameOrFn);
+
+  if (!formatter) {
+    console.error(
+      `Variable format ${formatNameOrFn} not found. Using glob format as fallback.`,
+    );
+    formatter = formatRegistry.get(VariableFormatID.Glob);
+  }
+
+  return formatter.formatter(value, args, variable, fieldPath);
 }

@@ -4,11 +4,12 @@ import {
   QueryVariable,
   useDataQuery,
   useInterpolator,
+  useUrlState,
   VariableValueCombobox,
   VizConfigBuilder,
   VizPanel,
 } from '@grafana/query-ui';
-import { Stack } from '@grafana/ui';
+import { Button, Stack } from '@grafana/ui';
 
 import { RenderStatsTable } from '../components/RenderStatsTable';
 import { ScenarioPage } from '../components/ScenarioPage';
@@ -85,6 +86,25 @@ function DataQueryProbe() {
   );
 }
 
+/**
+ * Bumps a url parameter that no variable or time range reads, to check what a
+ * location change on its own makes the probes do.
+ */
+function UrlCounterButton() {
+  const [url, setUrl] = useUrlState<{ urlCounter: string }>(['urlCounter']);
+  const count = Number(url.urlCounter ?? 0);
+
+  return (
+    <Button
+      size="sm"
+      variant="secondary"
+      onClick={() => setUrl({ urlCounter: String(count + 1) })}
+    >
+      Increment urlCounter ({count})
+    </Button>
+  );
+}
+
 const panelWrapper = css({ height: 240 });
 
 /**
@@ -126,7 +146,7 @@ export function QueryVariableDemoPage() {
               </Stack>
               <InterpolatedProbe />
               <DataQueryProbe />
-              <RenderStatsTable />
+              <RenderStatsTable extraActions={<UrlCounterButton />} />
             </Stack>
           </QueryVariable>
         </QueryVariable>

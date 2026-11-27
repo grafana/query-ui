@@ -1,6 +1,6 @@
-import { property } from 'lodash';
 import React, { useContext } from 'react';
 
+import { getFieldAccessor } from './interpolation/fieldAccessorCache';
 import { VariableContext, type VariableContextState } from './types';
 
 export interface ObjectVariableProps<T extends object> {
@@ -59,19 +59,4 @@ function useVariableContextState<T>(
     onOptionsChange: () => {},
     parent: input.parent,
   };
-}
-
-const fieldAccessorCache: FieldAccessorCache = {};
-
-function getFieldAccessor(fieldPath: string) {
-  const accessor = fieldAccessorCache[fieldPath];
-  if (accessor) {
-    return accessor;
-  }
-
-  return (fieldAccessorCache[fieldPath] = property(fieldPath));
-}
-
-interface FieldAccessorCache {
-  [key: string]: (obj: unknown) => unknown;
 }

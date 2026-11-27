@@ -70,13 +70,15 @@ nesting, querying the fake data source and rendering through the fake panel.
 ### Fonts and icons
 
 `GlobalStyles` and `Icon` from `@grafana/ui` request static assets from
-Grafana's own paths (`public/fonts/…`, `public/build/img/icons/…`) when
-`window.__grafana_public_path__` / `window.__grafana_build_path__` aren't set,
-which is the case here. `public/public/fonts/` and
-`public/public/build/img/icons/` vendor the Inter and Roboto Mono woff2 files
-and the full icon set from
-[grafana/grafana](https://github.com/grafana/grafana/tree/main/public) so both
-resolve against Vite's own static file serving instead of 404ing.
+`<public path>fonts/…` and `<public path>build/img/icons/…`, where the public
+path is `window.__grafana_public_path__`. `index.html` sets it to `/public/`,
+as Grafana does on boot. Without it, the path falls back to a relative
+`public/`, which resolves under the current route and breaks on any page more
+than one segment deep.
+`public/public/fonts/` and `public/public/build/img/icons/` vendor the Inter and
+Roboto Mono woff2 files and the full icon set from
+[grafana/grafana](https://github.com/grafana/grafana/tree/main/public), so both
+resolve against Vite's own static file serving.
 
 ### Known gaps
 
