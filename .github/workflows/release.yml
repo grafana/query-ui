@@ -62,7 +62,7 @@ on:
         description: 'Only used when "pr" is blank and "mode" is "beta": branch in this repo to snapshot-publish a beta from.'
         required: false
         type: string
-        default: main
+        default: release-test
 
 concurrency:
   # Real releases serialize on the ref; beta runs serialize per-PR so two PRs can
