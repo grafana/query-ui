@@ -37,7 +37,7 @@ interface TransformResult {
  * returns untransformed frames.
  *
  * The transformations are compared by value, so an inline array of configs is
- * fine. Custom operators are compared by reference: define them outside the
+ * fine. Custom operators, like useDataTransformer([() => src => src.pipe(...)], data), are compared by reference: define them outside the
  * component or memoize them, or cause an endless render loop.
  */
 export function useDataTransformer(
