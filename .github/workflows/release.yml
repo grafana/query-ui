@@ -471,6 +471,8 @@ jobs:
 
       - name: Publish to the beta tag
         if: steps.changesets.outputs.count != '0'
+        env:
+          NPM_CONFIG_LOGLEVEL: verbose
         run: |
           set -euo pipefail
           pnpm exec changeset publish --tag beta --no-git-tag | tee /tmp/publish.log
