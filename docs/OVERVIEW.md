@@ -1,4 +1,4 @@
-# Overview of Qiuery UI
+# Overview of Query UI
 
 `@grafana/query-ui` is a rewrite of [Grafana Scenes](https://github.com/grafana/scenes) for building Grafana data apps with plain React components, contexts, and hooks.
 
