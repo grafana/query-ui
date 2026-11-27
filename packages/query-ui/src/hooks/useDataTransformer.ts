@@ -38,7 +38,7 @@ interface TransformResult {
  *
  * The transformations are compared by value, so an inline array of configs is
  * fine. Custom operators are compared by reference: define them outside the
- * component or memoize them, or every render starts a new pass.
+ * component or memoize them, or cause an endless render loop.
  */
 export function useDataTransformer(
   transformations: DataTransformation[],
