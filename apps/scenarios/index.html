@@ -15,6 +15,11 @@
         user: { theme: 'dark' },
         navTree: [],
       };
+      // @grafana/ui loads icons and fonts from `<public path>build/img/icons/`
+      // and `<public path>fonts/`. Unset, the path is a relative `public/`,
+      // which breaks on any route more than one segment deep. Grafana sets
+      // this on boot; `/public/` is where Vite serves `public/public/`.
+      window.__grafana_public_path__ = '/public/';
     </script>
   </head>
   <body>
