@@ -11,6 +11,7 @@ import {
 } from '@grafana/query-ui';
 import { Button, Stack } from '@grafana/ui';
 
+import { RenderStatsTable } from '../components/RenderStatsTable';
 import { ScenarioPage } from '../components/ScenarioPage';
 import {
   FAKE_LABELED_DATASOURCE_UID,
@@ -19,10 +20,8 @@ import {
 import type { FakeLabeledQuery } from '../grafana/FakeLabeledDataSource';
 import {
   countProfilerRender,
-  resetRenderStats,
   useCommitCount,
   useRecordValue,
-  useRenderStats,
 } from '../renderStats/renderStats';
 
 const datasource = { uid: FAKE_LABELED_DATASOURCE_UID };
@@ -106,53 +105,7 @@ function UrlCounterButton() {
   );
 }
 
-/**
- * What the probes counted since the last reset. It sits outside the probed
- * components, so its own renders don't count.
- */
-function RenderStatsTable() {
-  const stats = useRenderStats();
-  const ids = [
-    ...new Set([...Object.keys(stats.renders), ...Object.keys(stats.values)]),
-  ];
-
-  return (
-    <Stack direction="column" gap={1}>
-      <Stack alignItems="center">
-        <h4 className={heading}>Since last reset</h4>
-        <Button size="sm" variant="secondary" onClick={resetRenderStats}>
-          Reset counts
-        </Button>
-        <UrlCounterButton />
-      </Stack>
-      <table data-testid="render-stats">
-        <thead>
-          <tr>
-            <th align="left">Probe</th>
-            <th align="left">Commits</th>
-            <th align="left">Values</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ids.map((id) => (
-            <tr key={id}>
-              <td valign="top">{id}</td>
-              <td valign="top">{stats.renders[id] ?? '-'}</td>
-              <td>
-                {(stats.values[id] ?? []).map((value, index) => (
-                  <div key={index}>{value}</div>
-                ))}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </Stack>
-  );
-}
-
 const panelWrapper = css({ height: 240 });
-const heading = css({ margin: 0 });
 
 /**
  * Three nested query variables against FakeLabeledDataSource, each narrowed
@@ -193,7 +146,7 @@ export function QueryVariableDemoPage() {
               </Stack>
               <InterpolatedProbe />
               <DataQueryProbe />
-              <RenderStatsTable />
+              <RenderStatsTable extraActions={<UrlCounterButton />} />
             </Stack>
           </QueryVariable>
         </QueryVariable>

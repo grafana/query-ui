@@ -33,6 +33,10 @@ export {
 export { renderPrometheusLabelFilters } from './filters/utils';
 export { useAdhocFilters } from './hooks/useAdhocFilters';
 export { useDataQuery } from './hooks/useDataQuery';
+export {
+  type DataTransformation,
+  useDataTransformer,
+} from './hooks/useDataTransformer';
 export { useTimeRange } from './hooks/useTimeRange';
 export { useVariable } from './hooks/useVariable';
 export {

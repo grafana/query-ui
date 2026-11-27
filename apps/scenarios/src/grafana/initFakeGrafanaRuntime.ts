@@ -1,4 +1,8 @@
-import type { DataSourceInstanceSettings } from '@grafana/data';
+import {
+  type DataSourceInstanceSettings,
+  standardTransformers,
+  standardTransformersRegistry,
+} from '@grafana/data';
 import {
   setDataSourceSrv,
   setPluginImportUtils,
@@ -25,7 +29,8 @@ let initialized = false;
  * setDataSourceSrv, setRunRequest and setPluginImportUtils. Those are what
  * @grafana/query-ui's VizPanel and useDataQuery read through getDataSourceSrv,
  * getRunRequest and getPluginImportUtils, so without them both would throw
- * outside a real Grafana instance. Call once, before the app renders.
+ * outside a real Grafana instance. It also registers the transformers
+ * useDataTransformer looks up. Call once, before the app renders.
  */
 export function initFakeGrafanaRuntime(): void {
   if (initialized) {
@@ -71,6 +76,21 @@ export function initFakeGrafanaRuntime(): void {
   );
 
   setRunRequest(runFakeRequest);
+
+  // Grafana fills this registry on boot with every transformer and its editor.
+  // The scenarios only need the limit transformer, and no editors.
+  const { limitTransformer } = standardTransformers;
+  standardTransformersRegistry.setInit(() => [
+    {
+      id: limitTransformer.id,
+      name: limitTransformer.name,
+      description: limitTransformer.description,
+      transformation: () => Promise.resolve(limitTransformer),
+      editor: () => null,
+      imageDark: '',
+      imageLight: '',
+    },
+  ]);
 
   const panelPlugins = new Map([
     [FAKE_TIMESERIES_PANEL_ID, fakeTimeSeriesPanelPlugin],
