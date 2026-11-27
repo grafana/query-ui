@@ -82,7 +82,7 @@ jobs:
       github.event_name == 'push' ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.pr == '' && github.event.inputs.mode != 'beta')
     runs-on: ubuntu-latest
-    environment: release
+    environment: npm-publish
     permissions:
       contents: write
       pull-requests: write
@@ -461,7 +461,7 @@ jobs:
       # unchanged — same packages, only the `^`/`~` → `*` specifier) so the frozen
       # dependency check pnpm runs before `pnpm exec` doesn't fail the Build/Publish
       # steps.
-      - name: Re-sync lockfile after pinning (grafana/design#404)
+      - name: Re-sync lockfile after pinning (grafana/query-ui#404)
         if: steps.changesets.outputs.count != '0'
         run: pnpm install --no-frozen-lockfile
 
